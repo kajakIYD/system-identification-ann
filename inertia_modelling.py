@@ -93,7 +93,7 @@ def next_batch(experiment_length, control_full, n_steps, previous_output=0): # b
     control_X_batch_flat = control_full
     output_y_batch_flat = y
 
-    return control_X_batch, output_y_batch, previous_output# ys1, ys2, previous_output
+    return control_X_batch, output_y_batch, previous_output, control_X_batch_flat, output_y_batch_flat # ys1, ys2, previous_output
 
 
 def construct_rnn(n_steps, n_inputs, n_outputs, n_neurons):
@@ -147,49 +147,58 @@ def construct_rnn(n_steps, n_inputs, n_outputs, n_neurons):
 #     # plt.show()
 
 
-def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title):
+def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title, experiment_length):
     with tf.Session() as sess:
         init.run()
         previous_output = 0
-        X_batch_full, y_batch_full, previous_output = next_batch(len(control_full), control_full, n_steps,
-                                                                 previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
+        X_batch_full, y_batch_full, previous_output, control_X_batch_flat, output_y_batch_flat = next_batch(
+            experiment_length, control_full, n_steps, previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
         X_batch = X_batch_full
         y_batch = y_batch_full
+
+        control_X_batch_flat = [0] * (n_steps - 1) + control_X_batch_flat
+        output_y_batch_flat = [0] * (n_steps - 1) + output_y_batch_flat
+
         for iteration in range(n_iterations):
-            # for i in range(0, n_steps):
-            #     X_batch = np.asarray(X_batch_full[i])
-            #     y_batch = np.asarray(y_batch_full[i])
-            sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
+            for i in range(0, len(control_full) - n_steps):
+                temp_y = np.asarray([np.asarray(output_y_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
+                temp_x = np.asarray([np.asarray(control_X_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
+                sess.run(training_op, feed_dict={X: temp_x, y: temp_y})
             # if iteration % 100 == 0:
             #     mse = loss.eval(feed_dict={X: X_batch, y: y_batch})
             #     print(iteration, "\tMSE:", mse)
 
         saver.save(sess, "./inertia_modelling_checkpoints/my_time_series_model"  + title)  # not shown in the book
 
+    output_prediction = []
     ###Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
     with tf.Session() as sess:  # not shown in the book
         saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
-        X_new = X_batch
-        y_pred = sess.run(outputs, feed_dict={X: X_new})
+        for i in range(0, len(control_full) - n_steps):
+            new_temp_x = np.asarray([np.asarray(control_X_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
+            y_pred = sess.run(outputs, feed_dict={X: new_temp_x})
+            output_prediction.append(y_pred[-1][-1])
 
     plt.title(title, fontsize=14)
-    plt.plot(range(0, n_steps), y_batch[0, :, 0], "bo", markersize=10, label="instance")
-    plt.plot(range(0, n_steps), y_pred[0, :, 0], "r.", markersize=10, label="prediction")
+    plt.plot(range(0, len(output_y_batch_flat) - n_steps), output_y_batch_flat[n_steps:len(output_y_batch_flat)], "b.", markersize=10, label="instance")
+    plt.plot(range(0, len(output_prediction)), output_prediction, "r.", markersize=10, label="prediction")
 
-    control_full_test = [2] * n_steps
+    control_full_test = [0] * (n_steps - 1) + [2] * (len(control_X_batch_flat) - (n_steps - 2))
+    output_prediction_test = []
     previous_output = 0
 
     ###Testowanie na zbiorze nowym
     with tf.Session() as sess:  # not shown in the book
         saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
+        for i in range(0, len(control_full) - n_steps):
+            new_temp_x = np.asarray([np.asarray(control_full_test[i:i + n_steps])]).reshape(-1, n_steps, 1)
+            y_pred_test = sess.run(outputs, feed_dict={X: new_temp_x})
+            output_prediction_test.append(y_pred_test[-1][-1])
 
-        X_new = np.asarray(control_full_test).reshape(-1, n_steps, 1)
-        y_pred_test = sess.run(outputs, feed_dict={X: X_new})
-
-    unused1, y_batch_test, unused2 = next_batch(n_steps, control_full_test, n_steps,
+    unused1, y_batch_test, unused2, control_X_batch_flat, output_y_batch_flat = next_batch(experiment_length, control_full_test, n_steps,
                                                 previous_output)
-    plt.plot(range(0, n_steps), y_batch_test[0, :, 0], "go", markersize=10, label="instance_test")
-    plt.plot(range(0, n_steps), y_pred_test[0, :, 0], "m.", markersize=10, label="prediction_test")
+    plt.plot(range(0, len(output_y_batch_flat) - n_steps), output_y_batch_flat[n_steps:], "g.", markersize=10, label="instance_test")
+    plt.plot(range(0, len(output_prediction_test)), output_prediction_test, "m.", markersize=10, label="prediction_test")
 
     plt.legend(loc="upper left")
     plt.xlabel("Time")
@@ -198,50 +207,60 @@ def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations
     plt.show()
 
 
-def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title):
+def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
+                             control_full, title, experiment_length):
     with tf.Session() as sess:
         init.run()
         previous_output = 0
-        y_batch_full, X_batch_full, previous_output = next_batch(n_steps, control_full, n_steps,
-                                                                 previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
+        X_batch_full, y_batch_full, previous_output, control_X_batch_flat, output_y_batch_flat = next_batch(
+            experiment_length, control_full, n_steps, previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
         X_batch = X_batch_full
         y_batch = y_batch_full
+
+        control_X_batch_flat = [0] * (n_steps - 1) + control_X_batch_flat
+        output_y_batch_flat = [0] * (n_steps - 1) + output_y_batch_flat
+
         for iteration in range(n_iterations):
-            # for i in range(0, n_steps):
-            #     X_batch = np.asarray(X_batch_full[i])
-            #     y_batch = np.asarray(y_batch_full[i])
-            sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
+            for i in range(0, len(control_full) - n_steps):
+                temp_y = np.asarray([np.asarray(output_y_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
+                temp_x = np.asarray([np.asarray(control_X_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
+                sess.run(training_op, feed_dict={X: temp_y, y: temp_x})
             # if iteration % 100 == 0:
             #     mse = loss.eval(feed_dict={X: X_batch, y: y_batch})
             #     print(iteration, "\tMSE:", mse)
 
-        saver.save(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown in the book
+        saver.save(sess, "./inertia_modelling_checkpoints/my_time_series_model"  + title)  # not shown in the book
 
+    input_prediction = []
     ###Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
     with tf.Session() as sess:  # not shown in the book
         saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
-
-        X_new = X_batch
-        y_pred = sess.run(outputs, feed_dict={X: X_new})
+        for i in range(0, len(control_full) - n_steps):
+            new_temp_y = np.asarray([np.asarray(output_y_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
+            X_pred = sess.run(outputs, feed_dict={X: new_temp_y})
+            input_prediction.append(X_pred[-1][-1])
 
     plt.title(title, fontsize=14)
-    plt.plot(range(0, n_steps), y_batch[0, :, 0], "bo", markersize=10, label="instance")
-    plt.plot(range(0, n_steps), y_pred[0, :, 0], "r.", markersize=10, label="prediction")
+    plt.plot(range(0, len(control_X_batch_flat) - n_steps), control_X_batch_flat[n_steps:len(control_X_batch_flat)], "b.", markersize=10, label="instance")
+    plt.plot(range(0, len(input_prediction)), input_prediction, "r.", markersize=10, label="prediction")
 
-    control_full_test = [2] * n_steps
+    control_full_test = [0] * (n_steps - 1) + [2] * (len(control_X_batch_flat) - (n_steps - 2))
+    input_prediction_test = []
     previous_output = 0
-    y_batch_test, X_batch_test, unused2 = next_batch(n_steps, control_full_test, n_steps,
-                                                                 previous_output)
+
+    X_batch_full, y_batch_full, previous_output, control_X_batch_flat, output_y_batch_flat_test = next_batch(
+        experiment_length, control_full_test, n_steps, previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
 
     ###Testowanie na zbiorze nowym
     with tf.Session() as sess:  # not shown in the book
         saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
+        for i in range(0, len(control_full) - n_steps):
+            new_temp_y = np.asarray([np.asarray(output_y_batch_flat_test[i:i + n_steps])]).reshape(-1, n_steps, 1)
+            X_pred_test = sess.run(outputs, feed_dict={X: new_temp_y})
+            input_prediction_test.append(X_pred_test[-1][-1])
 
-        X_new = X_batch_test
-        y_pred_test = sess.run(outputs, feed_dict={X: X_new})
-
-    plt.plot(range(0, n_steps), y_batch_test[0, :, 0], "go", markersize=10, label="instance_test")
-    plt.plot(range(0, n_steps), y_pred_test[0, :, 0], "m.", markersize=10, label="prediction_test")
+    plt.plot(range(0, len(control_full_test) - n_steps), control_full_test[n_steps:], "g.", markersize=10, label="instance_test")
+    plt.plot(range(0, len(input_prediction_test)), input_prediction_test, "m.", markersize=10, label="prediction_test")
 
     plt.legend(loc="upper left")
     plt.xlabel("Time")
@@ -259,23 +278,20 @@ def main():
     n_inputs = 1
     n_outputs = 1
 
-    n_iterations_list = [20, 50, 250]  # [100, 500, 1000, 1500, 2000] # czyli ile razy przejeżdżam przez cały zbiór danych
+    n_iterations_list = [10, 20, 50, 250]  # [100, 500, 1000, 1500, 2000] # czyli ile razy przejeżdżam przez cały zbiór danych
     batch_size_list = [2, 25]  # , 100] # [1, 5, 10, 25, 50, 100] # czyli ile poprzednich sterowań biorę pod uwagę
-    n_neurons_list = [200, 500, 1000]  # [1, 10, 100]
-    n_steps_list = [20, 50, 250]  # , 500]  # [1, 5, 20, 50]
+    n_neurons_list = [50, 200, 500, 1000]  # [1, 10, 100]
+    n_steps_list = [10, 20] #, 50, 250]  # , 500]  # [1, 5, 20, 50]
 
-    full_experiment_length = 200
+    full_experiment_length = 160
 
     for n_iterations in n_iterations_list:
     #    for batch_size in batch_size_list:  # poki co nie korzystam z batch size!!!
         for n_steps in n_steps_list:
             for n_neurons in n_neurons_list:
-                # t_instance = np.linspace(12.2, 12.2 + resolution * (n_steps + 1), n_steps + 1)
-                control_full = [1] * int(full_experiment_length)  # + [2] * int(n_steps/2)
-                control_instance = control_full[:n_steps]
+                control_full = [1] * int(full_experiment_length)
 
-
-                title = "n_iterations_" + str(n_iterations) + " n_steps_" + str(
+                title = "_FRAMED_n_iterations_" + str(n_iterations) + " n_steps_" + str(
                     n_steps) + " n_neurons_" + str(n_neurons)  #  + " batch_size_" + str(batch_size) # poki co nie korzystam z batch size
                 # plot_training_instance()
 
@@ -283,26 +299,26 @@ def main():
 
                 saver = tf.train.Saver()
 
-                run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title)
+                run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full,
+                                 title, full_experiment_length)
 
     ##Inversse modelling
     for n_iterations in n_iterations_list:
     #    for batch_size in batch_size_list:  # poki co nie korzystam z batch size!!!
         for n_steps in n_steps_list:
             for n_neurons in n_neurons_list:
-                # t_instance = np.linspace(12.2, 12.2 + resolution * (n_steps + 1), n_steps + 1)
-                control_full = [1] * int(n_steps)  # + [2] * int(n_steps/2)
-                control_instance = control_full[:n_steps]
+                control_full = [1] * int(full_experiment_length)
 
-                title = "INVERSE_n_iterations_" + str(n_iterations) + " n_steps_" + str(
+                title = "_FRAMED_INVERSE_n_iterations_" + str(n_iterations) + " n_steps_" + str(
                     n_steps) + " n_neurons_" + str(n_neurons)  #  + " batch_size_" + str(batch_size) # poki co nie korzystam z batch size
                 # plot_training_instance()
 
-                init, training_op, X, y, outputs, loss = construct_rnn((n_steps, n_inputs, n_outputs, n_neurons))
+                init, training_op, X, y, outputs, loss = construct_rnn(n_steps, n_inputs, n_outputs, n_neurons)
 
                 saver = tf.train.Saver()
 
-                run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title)
+                run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
+                                         control_full, title, full_experiment_length)
 
 
 if __name__ == "__main__":
