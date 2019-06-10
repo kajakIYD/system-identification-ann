@@ -79,7 +79,7 @@ def main():
     plt.title("Whole control that will be aplied to experiment")
     plt.show()
 
-    control_full_test = control_full[:-1]
+    control_full_test = control_full[::-1]
 
     inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test, "_MIXED_")
 
