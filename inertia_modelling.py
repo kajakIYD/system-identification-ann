@@ -191,7 +191,7 @@ def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations
     # plt.show()
 
     ##MSE
-    mse = math.sqrt(mean_squared_error(output_y_batch_flat[n_steps] - output_prediction_test))
+    mse = math.sqrt(mean_squared_error(output_y_batch_flat[n_steps:], output_prediction_test))
 
     # save_fig(title)
     return mse
@@ -254,7 +254,7 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
     # plt.show()
 
     ##MSE
-    mse = math.sqrt(mean_squared_error(control_full_test[n_steps:] - input_prediction_test))
+    mse = math.sqrt(mean_squared_error(control_full_test[n_steps:], input_prediction_test))
 
     # save_fig(title)
     return mse
