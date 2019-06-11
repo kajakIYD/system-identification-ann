@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 from pathlib import Path
+from sklearn.metrics import mean_squared_error
 
 import inertia_modelling
 
@@ -65,7 +66,9 @@ def pickle_object(object, file_name="pickled_object.pkl"):
 
     plt.rcParams.update({'font.size': 6})
 
+    mses = []
 
+    models_loop_counter = 0
 
     for title_model_inverse_data in titles_model_inverse_data:
         for title_model_data in titles_model_data:
@@ -154,17 +157,25 @@ def pickle_object(object, file_name="pickled_object.pkl"):
 
             loop_counter = loop_counter - 1
 
-            plt.plot(range(0, loop_counter), disturbed_plant_output, "bo", label="Disturbed plant output")
-            plt.plot(range(0, loop_counter), plant_control, "ro", label="Inverse model output (control)")
-            plt.plot(range(0, loop_counter), model_plant_disturbed_difference, "g.", label="Disturbed plant - model_output")
-            plt.plot(range(0, loop_counter), SP_feedback_difference, "m.", label="SP_feedback_difference")
-            plt.legend()
-            plt.xlabel("Time")
-            plt.title("model_inverse: neurons" + str(n_neurons_inverse_model) + " steps" + str(n_steps_inverse_model)
-                      + " n_iterations:" + str(n_iterations_model_inverse) + "model: neurons "
-                      + str(n_neurons_model) + " steps" + str(n_steps_inverse_model)
-                      + " n_iterations:" + str(n_iterations_model))
-            plt.show()
+            if mse_calc == True:
+                if not (True in np.isnan(disturbed_plant_output)):
+                    mses.append({'mse': mean_squared_error(disturbed_plant_output, SP),
+                                'model_title': title_model, 'model_inverse_title': title_model_inverse})
+
+                if (models_loop_counter % 50 and not models_loop_counter == 0)\
+                    or (len(titles_model_data) * len(titles_model_inverse_data) - models_loop_counter) < 50:
+                    pickle_object(mses, "mses_" + str(models_loop_counter) + ".pkl")
+                    mses.clear()
+1
+    if mse_calc == True:
+        mses_vals = [item['mse'] for item in mses]
+
+        min_mse_index = mses_vals.index(min(mses_vals))
+
+        print(mses[min_mse_index])
+
+        pickle_object(mses, "mses.pkl")
+
 
 
 if __name__ == "__main__":
