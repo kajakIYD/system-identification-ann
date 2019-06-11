@@ -2,6 +2,7 @@ import tensorflow as tf
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 from pathlib import Path
 
 import inertia_modelling
@@ -45,14 +46,26 @@ def extract_models_and_inverse_models_data(directory_in_str="./inertia_modelling
     return titles_model_inverse_data, titles_model_data
 
 
+def unpickle_model_and_model_inverse_performance():
+    with open(r"model_performance.pickle", "rb") as input_file:
+        model_performance = pickle.load(input_file)
+
+    with open(r"model_inverse_performance.pickle", "rb") as input_file:
+        model_inverse_performance = pickle.load(input_file)
+
+    return model_inverse_performance, model_performance
+
+
+def pickle_object(object, file_name="pickled_object.pkl"):
+    with open(file_name, "wb") as output_file:
+        pickle.dump(object, output_file)
+
+
+    model_inverse_performance, model_performance = unpickle_model_and_model_inverse_performance()
 
     plt.rcParams.update({'font.size': 6})
 
-    simulation_time = 30
-    dt = 0.1
 
-    SP = []
-    SP = [1] * int(simulation_time / (2 * dt)) + [2] * int(simulation_time / (2 * dt))
 
     for title_model_inverse_data in titles_model_inverse_data:
         for title_model_data in titles_model_data:
