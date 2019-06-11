@@ -7,6 +7,7 @@ from pathlib import Path
 from sklearn.metrics import mean_squared_error
 
 import inertia_modelling
+import model_and_inv_model_identification
 
 def extract_rnn_structure_from_title(title):
     split_title = title.split(" ")
@@ -62,6 +63,9 @@ def pickle_object(object, file_name="pickled_object.pkl"):
         pickle.dump(object, output_file)
 
 
+def main(titles_model_inverse_data, titles_model_data, simulation_time=30,
+         dt=0.1, SP=model_and_inv_model_identification.generate_sine(int(30/0.1), 1, 0.1), mse_calc=True,
+         plotting=False):
     model_inverse_performance, model_performance = unpickle_model_and_model_inverse_performance()
 
     plt.rcParams.update({'font.size': 6})
@@ -152,10 +156,29 @@ def pickle_object(object, file_name="pickled_object.pkl"):
 
                 loop_counter = loop_counter + 1
 
-                if loop_counter % 100 == 0:
-                    print(str(loop_counter) + "\n")
+                # if loop_counter % 100 == 0:
+                #     print(str(loop_counter) + "\n")
 
             loop_counter = loop_counter - 1
+
+            if plotting == True:
+                plt.plot(range(0, loop_counter), disturbed_plant_output, "b.", label="Disturbed plant output")
+                plt.plot(range(0, loop_counter), plant_control, "r.", label="Inverse model output (control)")
+                plt.plot(range(0, loop_counter), model_plant_disturbed_difference, "g.", label="Disturbed plant - model_output")
+                plt.plot(range(0, loop_counter), SP_feedback_difference, "m.", label="SP_feedback_difference")
+                plt.plot(range(0, loop_counter), SP, "y-", label="SP")
+                plt.legend()
+                plt.xlabel("Time")
+                plt.title("model_inverse: neurons" + str(n_neurons_inverse_model) + " steps" + str(n_steps_inverse_model)
+                          + " n_iterations:" + str(n_iterations_model_inverse) + "model: neurons "
+                          + str(n_neurons_model) + " steps" + str(n_steps_inverse_model)
+                          + " n_iterations:" + str(n_iterations_model))
+                plt.show()
+
+            models_loop_counter = models_loop_counter + 1
+
+            print("Model: " + str(models_loop_counter) + " out of: " +
+                  str(len(titles_model_data) * len(titles_model_inverse_data)))
 
             if mse_calc == True:
                 if not (True in np.isnan(disturbed_plant_output)):
@@ -179,4 +202,5 @@ def pickle_object(object, file_name="pickled_object.pkl"):
 
 
 if __name__ == "__main__":
-    main()
+    titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data()
+    main(titles_model_inverse_data, titles_model_data)
