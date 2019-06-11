@@ -2,32 +2,49 @@ import tensorflow as tf
 
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 import inertia_modelling
 
-def main():
-    titles_model_inverse_data= [{
-                                'title': "./inertia_modelling_checkpoints/my_time_series_modelINVERSE_n_iterations_20 n_steps_20 n_neurons_200",
-                                'n_steps': 20, 'n_neurons': 200, 'n_iterations': 20},
-                            {
-                                'title': "./inertia_modelling_checkpoints/my_time_series_model_FRAMED_INVERSE_n_iterations_10 n_steps_20 n_neurons_200",
-                                'n_steps': 20, 'n_neurons': 200, 'n_iterations': 10},
-                            {
-                                'title': "./inertia_modelling_checkpoints/my_time_series_model_FRAMED_INVERSE_n_iterations_10 n_steps_10 n_neurons_200",
-                                'n_steps': 10, 'n_neurons': 200, 'n_iterations': 10},
-                            ]
+def extract_rnn_structure_from_title(title):
+    split_title = title.split(" ")
+
+    for chunk in split_title:
+        if "n_neurons" in chunk:
+            n_neurons = int(chunk[chunk.index("n_neurons_") + len("n_neurons_"):])
+
+        if "n_steps" in chunk:
+            n_steps = int(chunk[chunk.index("n_steps_") + len("n_steps_"):])
+
+        if "n_iterations" in chunk:
+            n_iterations = int(chunk[chunk.index("n_iterations_") + len("n_iterations_"):])
+
+    return n_neurons, n_steps, n_iterations
 
 
-    titles_model_data =[{
-                        'title': "./inertia_modelling_checkpoints/my_time_series_modeln_iterations_250 n_steps_50 n_neurons_500",
-                         'n_steps': 50, 'n_neurons': 500, 'n_iterations': 2500},
-                   {
-                       'title': "./inertia_modelling_checkpoints/my_time_series_model_FRAMED_n_iterations_50 n_steps_20 n_neurons_200",
-                       'n_steps': 20, 'n_neurons': 200, 'n_iterations': 50},
-                   {
-                       'title': "./inertia_modelling_checkpoints/my_time_series_model_FRAMED_n_iterations_20 n_steps_20 n_neurons_500",
-                       'n_steps': 20, 'n_neurons': 500, 'n_iterations': 20}
-                  ]
+
+def extract_models_and_inverse_models_data(directory_in_str="./inertia_modelling_checkpoints/"):
+    titles_model_inverse_data = []
+    titles_model_data = []
+
+    pathlist = Path(directory_in_str).glob('**/*.meta')
+    for path in pathlist:
+        # because path is object not string
+        path_in_str = str(path).split(".")[0]
+        title = path_in_str
+
+        n_neurons, n_steps, n_iterations = extract_rnn_structure_from_title(title)
+
+        if "INVERSE" in path_in_str:
+            titles_model_inverse_data.append({'title': title, 'n_neurons': n_neurons,
+                                      'n_steps': n_steps, 'n_iterations': n_iterations})
+        else:
+            titles_model_data.append({'title': title, 'n_neurons': n_neurons,
+                                      'n_steps': n_steps, 'n_iterations': n_iterations})
+
+    return titles_model_inverse_data, titles_model_data
+
+
 
     plt.rcParams.update({'font.size': 6})
 
