@@ -185,11 +185,11 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=30,
                     mses.append({'mse': mean_squared_error(disturbed_plant_output, SP),
                                 'model_title': title_model, 'model_inverse_title': title_model_inverse})
 
-                if (models_loop_counter % 50 and not models_loop_counter == 0)\
-                    or (len(titles_model_data) * len(titles_model_inverse_data) - models_loop_counter) < 50:
+                if (models_loop_counter % 50 and not models_loop_counter == 0) \
+                        or (len(titles_model_data) * len(titles_model_inverse_data) - models_loop_counter) < 50:
                     pickle_object(mses, "mses_" + str(models_loop_counter) + ".pkl")
                     mses.clear()
-1
+
     if mse_calc == True:
         mses_vals = [item['mse'] for item in mses]
 
