@@ -1,6 +1,7 @@
 # Different controls applied to perform model and inverse model identification
 import math
 import matplotlib.pyplot as plt
+import random
 
 import inertia_modelling
 import simulation
@@ -14,10 +15,10 @@ def generate_sine(time, amplitude, omega, fi=0):
     return [amplitude * math.sin(omega * t) for t in range(time)]
 
 
-def generate_rectangle(time, amplitude, period):
+def generate_rectangle(time, amplitude, period, dt=1):
     output = []
-    for t in range(time):
-        if t % (2 * period) < period:
+    for t in range(int(time / dt)):
+        if t % (2 * period / dt) < period / dt:
             output.append(amplitude)
         else:
             output.append(-amplitude)
@@ -79,7 +80,7 @@ def main():
     plt.title("Whole control that will be aplied to experiment")
     plt.show()
 
-    control_full_test = control_full[::-1]
+    control_full_test = [item + random.uniform(-0.2, 0.2) for item in control_full[::-1]]
 
     inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test, "_MIXED_")
 
