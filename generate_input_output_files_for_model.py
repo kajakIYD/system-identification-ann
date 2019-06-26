@@ -17,9 +17,9 @@ def create_force_external_files(freq, sim_time_in_sec):
 
     for i in range(1, scenarios_cnt + 1):
 
-        wholeN = N * 5;
+        wholeN = N * 5
 
-        fileName = '/home/user/Documents/simEnv_2018_07_31/forceExternal_len_' + str(wholeN) + '_' + str(i) + '.txt';
+        fileName = '/home/user/Documents/simEnv_2018_07_31/forceExternal_len_' + str(wholeN) + '_' + str(i) + '.txt'
         force_external_files.append(fileName)
 
         force_vector = []
