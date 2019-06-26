@@ -34,7 +34,7 @@ def create_force_external_files(freq, sim_time_in_sec):
 
             for j in range(1, N+1):
                 value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value))
+                fid.write(str(value) + '\n')
                 force_vector.append(value)
 
             Amp = Amp_max / 1.2 / i
@@ -43,7 +43,7 @@ def create_force_external_files(freq, sim_time_in_sec):
 
             for j in range(1, N + 1):
                 value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value))
+                fid.write(str(value) + '\n')
                 force_vector.append(value)
 
             Amp = Amp_max / 1.3 / i
@@ -52,7 +52,7 @@ def create_force_external_files(freq, sim_time_in_sec):
 
             for j in range(1, N+1):
                 value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value))
+                fid.write(str(value) + '\n')
                 force_vector.append(value)
 
             Amp = Amp_max / 1.4 / i
@@ -61,7 +61,7 @@ def create_force_external_files(freq, sim_time_in_sec):
 
             for j in range(1, N+1):
                 value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value))
+                fid.write(str(value) + '\n')
                 force_vector.append(value)
 
             Amp = Amp_max / 0.5 / i
@@ -70,7 +70,7 @@ def create_force_external_files(freq, sim_time_in_sec):
 
             for j in range(1, N+1):
                 value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value))
+                fid.write(str(value) + '\n')
                 force_vector.append(value)
 
             force_vectors_dict[fileName] = force_vector
@@ -83,7 +83,7 @@ def write_velocity_to_file(force_file_directory, force_file_name, velocity):
 
     with open(velocity_file_name, 'w') as file:
         for vel in velocity:
-            file.write(str(vel))
+            file.write(str(vel) + '\n')
 
     return velocity_file_name
 
@@ -132,7 +132,6 @@ def run_simPrograms(force_external_files, freq, sim_time_in_sec):
         sim_result_dict['l_sim_Xr'] = l_sim_Xr
 
         sim_results_dict[force_file] = sim_result_dict
-
 
         velocity_file_name = write_velocity_to_file(force_file_directory, force_file_name_clean, l_sim_Xr[1])
 
