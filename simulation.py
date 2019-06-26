@@ -9,6 +9,15 @@ from sklearn.metrics import mean_squared_error
 import inertia_modelling
 import model_and_inv_model_identification
 
+import subprocess
+import os
+import signal
+
+import socket
+HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
+PORT = 8123        # Port to listen on (non-privileged ports are > 1023)
+
+
 def extract_rnn_structure_from_title(title):
     split_title = title.split(" ")
 
@@ -63,10 +72,13 @@ def pickle_object(object, file_name="pickled_object.pkl"):
         pickle.dump(object, output_file)
 
 
-def main(titles_model_inverse_data, titles_model_data, simulation_time=30,
-         dt=0.1, SP=model_and_inv_model_identification.generate_sine(int(30/0.1), 1, 0.1), mse_calc=True,
-         plotting=False):
-    model_inverse_performance, model_performance = unpickle_model_and_model_inverse_performance()
+sim_time_const = 30
+sample_rate_hz_const = 500
+def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_const,
+         dt=0.1, SP=sim_time_const * [0], mse_calc=True,
+         plotting=False, suspension_simulation=False):
+    # SP = model_and_inv_model_identification.generate_sine(int(30 / 0.1), 1, 0.1)
+    # model_inverse_performance, model_performance = unpickle_model_and_model_inverse_performance()
 
     plt.rcParams.update({'font.size': 6})
 
