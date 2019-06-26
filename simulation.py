@@ -241,10 +241,42 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
         pickle_object(mses, "mses.pkl")
 
 
+def compile_proper_simulator_in_TCP_mode(mode='active_suspension'):
+    # mode='semi_active_suspension'
+
+    # make change in configuration.h (enable TCP mode and proper suspension model)
+    fileName = '/home/user/Documents/simEnv_2018_07_31/configuration.h'
+
+    with open(fileName, "r") as file:
+        content = file.read()
+
+    content_modified = ''
+    for line in content.split('\n'):
+        if r"//#define TCP_ONLINE_SIMULATION" in line:
+            line = line.replace(r"//#define TCP_ONLINE_SIMULATION", r"#define TCP_ONLINE_SIMULATION")
+        content_modified = content_modified + line + '\n'
+
+    with open(fileName, "w") as file:
+        file.write(content_modified)
+
+    # make change in Makefile (in case of switching models)
+
+    # make clean
+    args_list = ['make', 'clean', '-C', '/home/user/Documents/simEnv_2018_07_31']
+    subprocess.run(args_list)
+
+    # make all
+    args_list = ['make', 'all', '-C', '/home/user/Documents/simEnv_2018_07_31']
+    subprocess.run(args_list)
+
+
 
 if __name__ == "__main__":
-    titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data()
+    compile_proper_simulator_in_TCP_mode(mode='active_suspension')
+
+    titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data(
+                                                   directory_in_str="./active_suspension_modelling_checkpoints")
     # titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data\
-    #                                                 ("./active_suspension_modelling_checkpoints")
+    #                                                 ("./inertia_modelling_checkpoints")
     main(titles_model_inverse_data, titles_model_data, dt=1, simulation_time=sim_time_const * sample_rate_hz_const,
          SP=sim_time_const * sample_rate_hz_const * [0], suspension_simulation=True, plotting=True)
