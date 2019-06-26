@@ -26,64 +26,94 @@ def generate_rectangle(time, amplitude, period, dt=1):
     return output
 
 
-def main():
-    full_experiment_length = 0
+def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_addon='SINGLE_SINE_TRAINED'):
 
-    experiment_length_part = 400
-    amplitude = 3
-    omega = 0.1
-    control_full = generate_sine(experiment_length_part, amplitude, omega)
+    if option == 'inertia_modelling':
+        full_experiment_length = 0
 
-    full_experiment_length = full_experiment_length + experiment_length_part
+        experiment_length_part = 400
+        amplitude = 3
+        omega = 0.1
+        control_full = generate_sine(experiment_length_part, amplitude, omega)
 
-    experiment_length_part = 500
-    amplitude = 2
-    period = 100
-    control_full = control_full + generate_rectangle(experiment_length_part, amplitude, period)
+        full_experiment_length = full_experiment_length + experiment_length_part
 
-    full_experiment_length = full_experiment_length + experiment_length_part
+        # experiment_length_part = 500
+        # amplitude = 2
+        # period = 100
+        # control_full = control_full + generate_rectangle(experiment_length_part, amplitude, period)
+        #
+        # full_experiment_length = full_experiment_length + experiment_length_part
+        #
+        # experiment_length_part = 400
+        # amplitude = 1
+        # omega = 0.05
+        # control_full = control_full + generate_sine(experiment_length_part, amplitude, omega)
+        #
+        # full_experiment_length = full_experiment_length + experiment_length_part
+        #
+        # experiment_length_part = 200
+        # amplitude = -3
+        # control_full = control_full + generate_step(experiment_length_part, amplitude)
+        #
+        # full_experiment_length = full_experiment_length + experiment_length_part
 
-    experiment_length_part = 400
-    amplitude = 1
-    omega = 0.05
-    control_full = control_full + generate_sine(experiment_length_part, amplitude, omega)
+        # experiment_length_part = 700
+        # amplitude = 1
+        # omega = 0.01
+        # control_full = control_full + generate_sine(experiment_length_part, amplitude, omega)
+        #
+        # full_experiment_length = full_experiment_length + experiment_length_part
+        #
+        # experiment_length_part = 200
+        # amplitude = 1
+        # control_full = control_full + generate_step(experiment_length_part, amplitude)
+        #
+        # full_experiment_length = full_experiment_length + experiment_length_part
+        #
+        # experiment_length_part = 600
+        # amplitude = 0.5
+        # period = 200
+        # control_full = control_full + generate_rectangle(experiment_length_part, amplitude, period)
+        #
+        # full_experiment_length = full_experiment_length + experiment_length_part
 
-    full_experiment_length = full_experiment_length + experiment_length_part
+        # plt.plot(range(full_experiment_length), control_full)
+        # plt.title("Whole control that will be aplied to experiment")
+        # plt.show(block=False) # but this option closes window immediately
 
-    experiment_length_part = 200
-    amplitude = -3
-    control_full = control_full + generate_step(experiment_length_part, amplitude)
+        control_full_test = [item + random.uniform(-0.2, 0.2) for item in control_full[::-1]]
 
-    full_experiment_length = full_experiment_length + experiment_length_part
+        inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test, "_MIXED_")
+    elif option == 'u_y_from_file':
 
-    experiment_length_part = 700
-    amplitude = 1
-    omega = 0.01
-    control_full = control_full + generate_sine(experiment_length_part, amplitude, omega)
+        if len(input_file_list) == 0 and len(output_file_list) == 0:
+            input_file_list = ["/home/user/Documents/simEnv_2018_07_31/forceExternal_len_200000_1.txt"]
+            output_file_list = ["/home/user/Documents/simEnv_2018_07_31/vel_1_len_200000_1.txt"]
 
-    full_experiment_length = full_experiment_length + experiment_length_part
+        for input_file, output_file in zip(input_file_list, output_file_list):
+            input_file_title = input_file.split('/')[-1][:-4]
+            output_file_title = output_file.split('/')[-1][:-4]
 
-    experiment_length_part = 200
-    amplitude = 1
-    control_full = control_full + generate_step(experiment_length_part, amplitude)
+            control_full = []
+            with open(input_file) as f:
+                for line in f:
+                    control_full.append(float(line.rstrip('\n')))
 
-    full_experiment_length = full_experiment_length + experiment_length_part
+            output_full = []
+            with open(output_file) as f:
+                for line in f:
+                    output_full.append(float(line.rstrip('\n')))
 
-    experiment_length_part = 600
-    amplitude = 0.5
-    period = 200
-    control_full = control_full + generate_rectangle(experiment_length_part, amplitude, period)
+            full_experiment_length = len(control_full)
+            control_full_test = [item + random.uniform(-0.2, 0.2) for item in control_full[::-1]]
 
-    full_experiment_length = full_experiment_length + experiment_length_part
+            inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test,
+                                                     title_addon=title_addon + input_file_title + "_" + output_file_title,
+                                                     option=option, output_full=output_full)
 
-    plt.plot(range(full_experiment_length), control_full)
-    plt.title("Whole control that will be aplied to experiment")
-    plt.show()
-
-    control_full_test = [item + random.uniform(-0.2, 0.2) for item in control_full[::-1]]
-
-    inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test, "_MIXED_")
+    print("FINISHED!!!!!")
 
 
 if __name__ == "__main__":
-    main()
+    main(option='u_y_from_file')
