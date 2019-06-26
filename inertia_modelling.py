@@ -276,7 +276,7 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
 
 
 def perform_identification(control_full, full_experiment_length, control_full_test, title_addon='',
-                           n_iterations_list=[10, 20, 50], # czyli ile razy przejeżdżam przez cały zbiór danych
+                           n_iterations_list=[10, 20, 50],  # czyli ile razy przejeżdżam przez cały zbiór danych
                            # batch_size_list=[2, 25],  # , 100]
                            n_neurons_list=[50, 200, 500],  # [1, 10, 100]
                            n_steps_list=[10, 20, 30],  # czyli ile poprzednich sterowań biorę pod uwagę
