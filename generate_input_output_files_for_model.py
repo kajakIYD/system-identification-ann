@@ -149,4 +149,4 @@ if __name__ == "__main__":
     velocity_files = run_simPrograms(force_external_files, freq, sim_time_in_sec)
 
     model_and_inv_model_identification.main(option='u_y_from_file', input_file_list=force_external_files,
-                                            output_file_list=velocity_files, title_addon='_SINGLE_SINE_TRAINED_')
+                                            output_file_list=velocity_files, title_addon='_MIXED_SINE_TRAINED_')
