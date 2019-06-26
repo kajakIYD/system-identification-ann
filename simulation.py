@@ -202,7 +202,7 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
 
             loop_counter = loop_counter - 1
 
-            if plotting == True:
+            if plotting:
                 plt.plot(range(0, loop_counter), disturbed_plant_output, "b.", label="Disturbed plant output")
                 plt.plot(range(0, loop_counter), plant_control, "r.", label="Inverse model output (control)")
                 plt.plot(range(0, loop_counter), model_plant_disturbed_difference, "g.", label="Disturbed plant - model_output")
@@ -221,7 +221,7 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
             print("Model: " + str(models_loop_counter) + " out of: " +
                   str(len(titles_model_data) * len(titles_model_inverse_data)))
 
-            if mse_calc == True:
+            if mse_calc:
                 if not (True in np.isnan(disturbed_plant_output)):
                     mses.append({'mse': mean_squared_error(disturbed_plant_output, SP),
                                 'model_title': title_model, 'model_inverse_title': title_model_inverse})
