@@ -139,6 +139,23 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
             a = 1
             b = 0.1
 
+            if suspension_simulation:
+                path_to_simulator_executable = "/home/user/Documents/simEnv_2018_07_31/simProgram"
+                sample_rate_hz = sample_rate_hz_const
+                length_of_experiment = simulation_time * 400
+                meas_dest_file_name = "/home/user/Documents/simEnv_2018_07_31/simResults/" \
+                                      + title_model.split('/')[1].replace(' ', '_') \
+                                      + title_model_inverse.split('/')[1].replace(' ', '_')
+                mr_control_parameters_file_name = "/home/user/Documents/simEnv_2018_07_31/ctrl_params_tmp"
+                args_list = [path_to_simulator_executable, str(sample_rate_hz), str(length_of_experiment),
+                             meas_dest_file_name, mr_control_parameters_file_name]
+                subprocess.Popen(args_list)  # run process in background
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.bind((HOST, PORT))
+                s.listen()
+                conn, addr = s.accept()
+                print("s.accept performed!")
+
             for t in range(0, int(simulation_time / dt)):
                 inverse_model_input_vector[-1] = SP[t] - previous_model_plant_disturbed_difference[-1]
                 model_plant_disturbed_difference.append(previous_model_plant_disturbed_difference[-1])
@@ -153,9 +170,17 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
                 X_new_model = np.asarray(model_input_vector).reshape(-1, n_steps_model, 1)
                 y_pred_model = sess_model.run(outputs, feed_dict={X_model: X_new_model})
 
-                plant_control.append(y_pred_inverse_model[-1][-1])
-                plant_output.append(inertia_modelling.simulate_step(y_pred_inverse_model[-1][-1],
-                                                                    plant_output[loop_counter - 1], a, b))
+                current_control = y_pred_inverse_model[-1][-1]
+                plant_control.append(current_control)
+                if suspension_simulation:
+                    # send control
+                    conn.sendall(bytearray(str(current_control), 'utf-8'))
+
+                    #receive suspension output
+                    plant_output.append(float(conn.recv(1024)))
+                else:
+                    plant_output.append(inertia_modelling.simulate_step(current_control,
+                                                                        plant_output[loop_counter - 1], a, b))
 
                 disturbances = 0
                 disturbed_plant_output.append(plant_output[loop_counter] + disturbances)

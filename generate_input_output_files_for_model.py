@@ -144,7 +144,7 @@ def run_simPrograms(force_external_files, freq, sim_time_in_sec):
 
 if __name__ == "__main__":
     freq = 500
-    sim_time_in_sec = 10
+    sim_time_in_sec = 12
     [force_external_files, force_vectors_dict] = create_force_external_files(freq, sim_time_in_sec)
     velocity_files = run_simPrograms(force_external_files, freq, sim_time_in_sec)
 
