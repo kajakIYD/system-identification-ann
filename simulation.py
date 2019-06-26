@@ -244,4 +244,7 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
 
 if __name__ == "__main__":
     titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data()
-    main(titles_model_inverse_data, titles_model_data)
+    # titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data\
+    #                                                 ("./active_suspension_modelling_checkpoints")
+    main(titles_model_inverse_data, titles_model_data, dt=1, simulation_time=sim_time_const * sample_rate_hz_const,
+         SP=sim_time_const * sample_rate_hz_const * [0], suspension_simulation=True, plotting=True)
