@@ -193,8 +193,12 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
 
                 loop_counter = loop_counter + 1
 
-                # if loop_counter % 100 == 0:
-                #     print(str(loop_counter) + "\n")
+                if loop_counter % 1000 == 0:
+                    print(str(loop_counter))
+
+            if suspension_simulation:
+                conn.sendall(b'$')
+                print("C suspension simulator killed!")
 
             loop_counter = loop_counter - 1
 
