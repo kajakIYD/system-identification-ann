@@ -77,7 +77,8 @@ def time_series(t):
     return t * np.sin(t) / 4 + 5 * np.sin(t*3)
 
 
-def next_batch(experiment_length, control_full, n_steps, previous_output=0): # bylo jeszcze batch_size ale z niego nie korzystam
+def next_batch(experiment_length, control_full, n_steps, previous_output=0,
+               output_full=[]): # bylo jeszcze batch_size ale z niego nie korzystam
     # t0 = np.random.rand(batch_size, 1) * (t_max - t_min - n_steps * resolution)  # to produkuje macierz batch_size x n_steps, czyli ileś paczuszek po n_steps wartosci każda
                                                                                  # czyli na przykład ładuje wektor sterowań (albo kilka paczuszek wektorów sterowań), a sieć
                                                                                  # powinna wypluć wyjście (albo wektor wyjść jeżeli wrzucam kilka paczek)
@@ -88,10 +89,13 @@ def next_batch(experiment_length, control_full, n_steps, previous_output=0): # b
     # # w szeregah czasowych szuka sie zaleznosci pomiedzy poprzednia a nastepna probka, to tak jakby szukac zaleznosci pomiezy poprzednim wyjsciem a nastepnym wyjsciem obiektu, a to bzdura, bo zalezy od sterowania i/albo od stanu
 
     y = []
-    for i in range(0, experiment_length): #było też n_steps + 1 ale to dla błędnej koncepcji :p
-        current_output = simulate_step(control_full[i], previous_output=previous_output)
-        y.append(current_output)
-        previous_output = current_output
+    if len(output_full) == 0:
+        for i in range(0, experiment_length): #było też n_steps + 1 ale to dla błędnej koncepcji :p
+            current_output = simulate_step(control_full[i], previous_output=previous_output)
+            y.append(current_output)
+            previous_output = current_output
+    else:
+        y = output_full
 
     ys = np.asarray([np.asarray(y)])
 
@@ -134,12 +138,12 @@ def construct_rnn(n_steps, n_inputs, n_outputs, n_neurons):
 
 
 def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
-                     control_full, control_full_test, title, experiment_length):
+                     control_full, control_full_test, title, experiment_length, output_full=[]):
     with tf.Session() as sess:
         init.run()
         previous_output = 0
         X_batch_full, y_batch_full, previous_output, control_X_batch_flat, output_y_batch_flat = next_batch(
-            experiment_length, control_full, n_steps, previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
+            experiment_length, control_full, n_steps, previous_output, output_full=output_full)  # bylo jeszcze batch_size ale z tego nie korzystam
         X_batch = X_batch_full
         y_batch = y_batch_full
 
@@ -147,12 +151,16 @@ def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations
         output_y_batch_flat = [0] * (n_steps - 1) + output_y_batch_flat
 
         for iteration in range(n_iterations):
+            print("Normal model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
+                  + title + " train, iteration:" + str(iteration))
             for i in range(0, len(control_full) - n_steps):
                 temp_y = np.asarray([np.asarray(output_y_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
                 temp_x = np.asarray([np.asarray(control_X_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
                 sess.run(training_op, feed_dict={X: temp_x, y: temp_y})
 
-        saver.save(sess, "./inertia_modelling_checkpoints/my_time_series_model"  + title)  # not shown in the book
+        saver.save(sess, "./active_suspension_modelling_checkpoints/my_time_series_model" + title)  # not shown in the book
+        print("Normal model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
+              + title + " done and saved")
 
     # output_prediction = []
     # ###Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
@@ -175,7 +183,7 @@ def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations
 
     ###Testowanie na zbiorze nowym
     with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
+        saver.restore(sess, "./active_suspension_modelling_checkpoints/my_time_series_model" + title)  # not shown
         for i in range(0, len(control_full) - n_steps):
             new_temp_x = np.asarray([np.asarray(control_full_test[i:i + n_steps])]).reshape(-1, n_steps, 1)
             y_pred_test = sess.run(outputs, feed_dict={X: new_temp_x})
@@ -192,6 +200,9 @@ def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations
 
     ##MSE
     mse = math.sqrt(mean_squared_error(output_y_batch_flat[n_steps:], output_prediction_test))
+
+    print("Model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
+          + title + " tested. MSE calculated")
 
     # save_fig(title)
     return mse
@@ -211,12 +222,14 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
         output_y_batch_flat = [0] * (n_steps - 1) + output_y_batch_flat
 
         for iteration in range(n_iterations):
+            print("Normal model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
+                  + title + " train, iteration:" + str(iteration))
             for i in range(0, len(control_full) - n_steps):
                 temp_y = np.asarray([np.asarray(output_y_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
                 temp_x = np.asarray([np.asarray(control_X_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
                 sess.run(training_op, feed_dict={X: temp_y, y: temp_x})
 
-        saver.save(sess, "./inertia_modelling_checkpoints/my_time_series_model"  + title)  # not shown in the book
+        saver.save(sess, "./active_suspension_modelling_checkpoints/my_time_series_model" + title)  # not shown in the book
 
     # input_prediction = []
     # ###Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
@@ -241,11 +254,13 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
 
     ###Testowanie na zbiorze nowym
     with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
+        saver.restore(sess, "./active_suspension_modelling_checkpoints/my_time_series_model" + title)  # not shown
         for i in range(0, len(control_full) - n_steps):
             new_temp_y = np.asarray([np.asarray(output_y_batch_flat_test[i:i + n_steps])]).reshape(-1, n_steps, 1)
             X_pred_test = sess.run(outputs, feed_dict={X: new_temp_y})
             input_prediction_test.append(X_pred_test[-1][-1])
+            print("Inverse model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
+            + title + " test, iteration:" + str(i))
 
     # plt.title()
     # plt.plot(range(0, len(control_full_test) - n_steps), control_full_test[n_steps:], "g.", markersize=10, label="instance_test")
@@ -265,9 +280,14 @@ def perform_identification(control_full, full_experiment_length, control_full_te
                            # batch_size_list=[2, 25],  # , 100]
                            n_neurons_list=[50, 200, 500],  # [1, 10, 100]
                            n_steps_list=[10, 20, 30],  # czyli ile poprzednich sterowań biorę pod uwagę
-                           mode='basicRNN'):
+                           mode='basicRNN',
+                           option='', output_full=[]):
     n_inputs = 1
     n_outputs = 1
+
+    all_models_counter = len(n_iterations_list) * len(n_neurons_list) * len(n_steps_list)
+    all_models_inverse_counter = all_models_counter
+    models_counter = 1
 
     model_performance = []
     model_inverse_performance = []
@@ -285,14 +305,19 @@ def perform_identification(control_full, full_experiment_length, control_full_te
                 saver = tf.train.Saver()
 
                 mse = run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
-                                 control_full, control_full_test, title, full_experiment_length)
+                                 control_full, control_full_test, title, full_experiment_length, output_full=output_full)
                 model_performance.append(
                     {
                         'MSE': mse,
-                        'n_steps': n_steps, 'n_neurons': n_neurons, 'n_iterations': n_iterations
+                        'n_steps': n_steps, 'n_neurons': n_neurons, 'n_iterations': n_iterations,
+                        'identification_option': option
                     })
+                print("Model " + str(models_counter) + " of " + str(all_models_counter))
+                models_counter = models_counter + 1
 
-    ##Inversse modelling
+    models_counter = 0
+
+    ##Inverse modelling
     for n_iterations in n_iterations_list:
     #    for batch_size in batch_size_list:  # poki co nie korzystam z batch size!!!
         for n_steps in n_steps_list:
@@ -310,8 +335,11 @@ def perform_identification(control_full, full_experiment_length, control_full_te
                 model_inverse_performance.append(
                     {
                         'MSE': mse,
-                        'n_steps': n_steps, 'n_neurons': n_neurons, 'n_iterations': n_iterations
+                        'n_steps': n_steps, 'n_neurons': n_neurons, 'n_iterations': n_iterations,
+                        'identification_option': option
                     })
+                print("Inverse model " + str(models_counter) + " of " + str(all_models_inverse_counter))
+                models_counter = models_counter + 1
 
     with open(r"model_performance.pickle", "wb") as output_file:
         pickle.dump(model_performance, output_file)
@@ -319,8 +347,9 @@ def perform_identification(control_full, full_experiment_length, control_full_te
     with open(r"model_inverse_performance.pickle", "wb") as output_file:
         pickle.dump(model_inverse_performance, output_file)
 
+
 if __name__ == "__main__":
     full_experiment_length = 160
     control_full = [1] * int(full_experiment_length)
-    control_full_test = control_full[:-1]
+    control_full_test = control_full[::-1]
     perform_identification(control_full, full_experiment_length, control_full_test)
