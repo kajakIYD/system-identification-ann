@@ -72,7 +72,7 @@ def pickle_object(object, file_name="pickled_object.pkl"):
         pickle.dump(object, output_file)
 
 
-sim_time_const = 30
+sim_time_const = 10
 sample_rate_hz_const = 500
 def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_const,
          dt=0.1, SP=sim_time_const * [0], mse_calc=True,
@@ -83,6 +83,7 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
     plt.rcParams.update({'font.size': 6})
 
     mses = []
+    mses_all = []
 
     models_loop_counter = 0
 
@@ -142,17 +143,17 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
             if suspension_simulation:
                 path_to_simulator_executable = "/home/user/Documents/simEnv_2018_07_31/simProgram"
                 sample_rate_hz = sample_rate_hz_const
-                length_of_experiment = simulation_time * 400
                 meas_dest_file_name = "/home/user/Documents/simEnv_2018_07_31/simResults/" \
                                       + title_model.split('/')[1].replace(' ', '_') \
                                       + title_model_inverse.split('/')[1].replace(' ', '_')
                 mr_control_parameters_file_name = "/home/user/Documents/simEnv_2018_07_31/ctrl_params_tmp"
-                args_list = [path_to_simulator_executable, str(sample_rate_hz), str(length_of_experiment),
+                args_list = [path_to_simulator_executable, str(sample_rate_hz), str(simulation_time),
                              meas_dest_file_name, mr_control_parameters_file_name]
                 subprocess.Popen(args_list)  # run process in background
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.bind((HOST, PORT))
                 s.listen()
+                print("Python Simulation Server awaiting for connection...")
                 conn, addr = s.accept()
                 print("s.accept performed!")
 
@@ -170,20 +171,29 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
                 X_new_model = np.asarray(model_input_vector).reshape(-1, n_steps_model, 1)
                 y_pred_model = sess_model.run(outputs, feed_dict={X_model: X_new_model})
 
-                current_control = y_pred_inverse_model[-1][-1]
+                current_control = float(y_pred_inverse_model[-1][-1])
                 plant_control.append(current_control)
                 if suspension_simulation:
                     # send control
-                    conn.sendall(bytearray(str(current_control), 'utf-8'))
-
-                    #receive suspension output
-                    plant_output.append(float(conn.recv(1024)))
+                    if (conn.sendall(str(current_control).encode()) == None):
+                        # conn.sendall(bytearray(str(1111.11), 'utf-8'))
+                        try:
+                            #receive suspension output
+                            received = conn.recv(1024)
+                            control_float = float(received)
+                        except ConnectionResetError:
+                            print("Stopped at probe " + str(t))
+                        except ValueError:
+                            print("PROBLEM@!!! OTRZYMANO: " + received)
+                            return
+                        #print(received)
+                        plant_output.append(control_float)
                 else:
                     plant_output.append(inertia_modelling.simulate_step(current_control,
                                                                         plant_output[loop_counter - 1], a, b))
 
                 disturbances = 0
-                disturbed_plant_output.append(plant_output[loop_counter] + disturbances)
+                disturbed_plant_output.append(plant_output[-1] + disturbances)
 
                 previous_model_plant_disturbed_difference = previous_model_plant_disturbed_difference[1:]
                 previous_model_plant_disturbed_difference.append(disturbed_plant_output[loop_counter - 1] - y_pred_model[-1][-1])
@@ -200,14 +210,12 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
                 conn.sendall(b'$')
                 print("C suspension simulator killed!")
 
-            loop_counter = loop_counter - 1
-
             if plotting:
-                plt.plot(range(0, loop_counter), disturbed_plant_output, "b.", label="Disturbed plant output")
-                plt.plot(range(0, loop_counter), plant_control, "r.", label="Inverse model output (control)")
-                plt.plot(range(0, loop_counter), model_plant_disturbed_difference, "g.", label="Disturbed plant - model_output")
-                plt.plot(range(0, loop_counter), SP_feedback_difference, "m.", label="SP_feedback_difference")
-                plt.plot(range(0, loop_counter), SP, "y-", label="SP")
+                plt.plot(range(0, len(disturbed_plant_output)), disturbed_plant_output, "b.", label="Disturbed plant output")
+                plt.plot(range(0, len(plant_control)), plant_control, "r.", label="Inverse model output (control)")
+                plt.plot(range(0, len(model_plant_disturbed_difference)), model_plant_disturbed_difference, "g.", label="Disturbed plant - model_output")
+                plt.plot(range(0, len(SP_feedback_difference)), SP_feedback_difference, "m.", label="SP_feedback_difference")
+                plt.plot(range(0, len(SP)), SP, "y-", label="SP")
                 plt.legend()
                 plt.xlabel("Time")
                 plt.title("model_inverse: neurons" + str(n_neurons_inverse_model) + " steps" + str(n_steps_inverse_model)
@@ -226,17 +234,18 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
                     mses.append({'mse': mean_squared_error(disturbed_plant_output, SP),
                                 'model_title': title_model, 'model_inverse_title': title_model_inverse})
 
-                if (models_loop_counter % 50 and not models_loop_counter == 0) \
+                if (models_loop_counter % 50 == 0 and not models_loop_counter == 0) \
                         or (len(titles_model_data) * len(titles_model_inverse_data) - models_loop_counter) < 50:
                     pickle_object(mses, "mses_" + str(models_loop_counter) + ".pkl")
+                    mses_all = mses_all + mses
                     mses.clear()
 
-    if mse_calc == True:
-        mses_vals = [item['mse'] for item in mses]
+    if mse_calc:
+        mses_vals = [item['mse'] for item in mses_all]
 
         min_mse_index = mses_vals.index(min(mses_vals))
 
-        print(mses[min_mse_index])
+        print(mses_all[min_mse_index])
 
         pickle_object(mses, "mses.pkl")
 
@@ -254,12 +263,33 @@ def compile_proper_simulator_in_TCP_mode(mode='active_suspension'):
     for line in content.split('\n'):
         if r"//#define TCP_ONLINE_SIMULATION" in line:
             line = line.replace(r"//#define TCP_ONLINE_SIMULATION", r"#define TCP_ONLINE_SIMULATION")
+        if r"#define ROAD_EXC_OFF" in line and r"//#define ROAD_EXC_OFF" not in line:
+            line = line.replace(r"#define ROAD_EXC_OFF", r"//#define ROAD_EXC_OFF")
+        if r"//#define SIN_FREQ_ROAD_EXC" in line:
+            line = line.replace(r"//#define SIN_FREQ_ROAD_EXC", r"#define SIN_FREQ_ROAD_EXC")
+
         content_modified = content_modified + line + '\n'
 
     with open(fileName, "w") as file:
         file.write(content_modified)
 
-    # make change in Makefile (in case of switching models)
+    # make change in Makefile
+    fileName = '/home/user/Documents/simEnv_2018_07_31/Makefile'
+
+    with open(fileName, "r") as file:
+        content = file.read()
+
+    content_modified = ''
+    for line in content.split('\n'):
+        if r"ROAD_EXC = roadExcOff" in line and not r"#ROAD_EXC = roadExcOff" in line:
+            line = line.replace(r"ROAD_EXC = roadExcOff", r"#ROAD_EXC = roadExcOff")
+        if r"#ROAD_EXC = sinFreqRoadExc" in line:
+            line = line.replace(r"#ROAD_EXC = sinFreqRoadExc", r"ROAD_EXC = sinFreqRoadExc")
+
+        content_modified = content_modified + line + '\n'
+
+    with open(fileName, "w") as file:
+        file.write(content_modified)
 
     # make clean
     args_list = ['make', 'clean', '-C', '/home/user/Documents/simEnv_2018_07_31']
@@ -270,7 +300,6 @@ def compile_proper_simulator_in_TCP_mode(mode='active_suspension'):
     subprocess.run(args_list)
 
 
-
 if __name__ == "__main__":
     compile_proper_simulator_in_TCP_mode(mode='active_suspension')
 
@@ -278,5 +307,6 @@ if __name__ == "__main__":
                                                    directory_in_str="./active_suspension_modelling_checkpoints")
     # titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data\
     #                                                 ("./inertia_modelling_checkpoints")
-    main(titles_model_inverse_data, titles_model_data, dt=1, simulation_time=sim_time_const * sample_rate_hz_const,
+
+    main(titles_model_inverse_data[:3], titles_model_data[:3], dt=1/sample_rate_hz_const, simulation_time=sim_time_const,
          SP=sim_time_const * sample_rate_hz_const * [0], suspension_simulation=True, plotting=True)
