@@ -155,20 +155,25 @@ def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations
 
         for iteration in range(n_iterations):
             if iteration % 10 == 0:
-                print("Normal model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
-                      + title + " train, iteration:" + str(iteration))
+                if option != '':
+                    print("Normal model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
+                          + title + " train, iteration:" + str(iteration))
+                else:
+                    print("Normal model " + "./inertia_modelling_checkpoints/my_time_series_model"
+                          + title + " train, iteration:" + str(iteration))
             for i in range(0, len(control_full) - n_steps):
                 temp_y = np.asarray([np.asarray(output_y_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
                 temp_x = np.asarray([np.asarray(control_X_batch_flat[i:i + n_steps])]).reshape(-1, n_steps, 1)
                 sess.run(training_op, feed_dict={X: temp_x, y: temp_y})
 
         if option != '':
-            saver.save(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown in the book
-            print("Normal model " + "./inertia_modelling_checkpoints/my_time_series_model"
+            saver.save(sess,
+                       "./active_suspension_modelling_checkpoints/my_time_series_model" + title)  # not shown in the book
+            print("Normal model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
                   + title + " done and saved")
         else:
-            saver.save(sess, "./active_suspension_modelling_checkpoints/my_time_series_model" + title)  # not shown in the book
-            print("Normal model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
+            saver.save(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown in the book
+            print("Normal model " + "./inertia_modelling_checkpoints/my_time_series_model"
                   + title + " done and saved")
 
     # output_prediction = []
@@ -190,51 +195,57 @@ def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations
     output_prediction_test = []
     previous_output = 0
 
-    ###Testowanie na zbiorze nowym
+    # Testowanie na zbiorze nowym
     with tf.Session() as sess:  # not shown in the book
         if option != '':
-            saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)
-        else:
             saver.restore(sess, "./active_suspension_modelling_checkpoints/my_time_series_model" + title)
+        else:
+            saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)
         for i in range(0, len(control_full) - n_steps):
             new_temp_x = np.asarray([np.asarray(control_full_test[i:i + n_steps])]).reshape(-1, n_steps, 1)
             y_pred_test = sess.run(outputs, feed_dict={X: new_temp_x})
             output_prediction_test.append(y_pred_test[-1][-1])
 
-    unused1, y_batch_test, unused2, control_X_batch_flat, output_y_batch_flat = next_batch(experiment_length, control_full_test, n_steps,
-                                                previous_output)
-    # plt.title(title, fontsize=14)
-    # plt.plot(range(0, len(output_y_batch_flat) - n_steps), output_y_batch_flat[n_steps:], "g.", markersize=5, label="instance_test")
-    # plt.plot(range(0, len(output_prediction_test)), output_prediction_test, "m.", markersize=5, label="prediction_test")
-    # plt.xlabel("Time")
-    # plt.legend()
-    # plt.show()
+    unused1, y_batch_test, unused2, control_X_batch_flat, output_y_batch_flat = next_batch(experiment_length,
+                                                                                           control_full_test, n_steps,
+                                                                                           previous_output,
+                                                                                           output_full=output_full_test)
+
+    if ploting:
+        plt.title(title, fontsize=10)
+        plt.plot(range(0, len(output_y_batch_flat) - n_steps), output_y_batch_flat[n_steps:], "g.", markersize=3,
+                 label="instance_test")
+        plt.plot(range(0, len(output_prediction_test)), output_prediction_test, "m.", markersize=3,
+                 label="prediction_test")
+        plt.xlabel("Time")
+        plt.legend()
+        plt.show()
 
     try:
-        ##MSE
+        # MSE
         mse = mean_squared_error(output_y_batch_flat[n_steps:], output_prediction_test)
     except ValueError:
         mse = 0.0
 
     if option != '':
-        print("Model " + "./inertia_modelling_checkpoints/my_time_series_model"
-              + title + " tested. MSE calculated")
-    else:
         print("Model " + "./active_suspension_modelling_checkpoints/my_time_series_model"
               + title + " tested. MSE calculated")
-
+    else:
+        print("Model " + "./inertia_modelling_checkpoints/my_time_series_model"
+              + title + " tested. MSE calculated")
 
     # save_fig(title)
     return mse
 
 
 def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
-                             control_full, control_full_test, title, experiment_length, option=''):
+                             control_full, control_full_test, title, experiment_length, option='',
+                             output_full=[], output_full_test=[], ploting=False):
     with tf.Session() as sess:
         init.run()
         previous_output = 0
         X_batch_full, y_batch_full, previous_output, control_X_batch_flat, output_y_batch_flat = next_batch(
-            experiment_length, control_full, n_steps, previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
+            experiment_length, control_full, n_steps, previous_output, output_full=output_full)  # bylo jeszcze batch_size ale z tego nie korzystam
         X_batch = X_batch_full
         y_batch = y_batch_full
 
@@ -282,7 +293,7 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
     previous_output = 0
 
     X_batch_full, y_batch_full, previous_output, control_X_batch_flat, output_y_batch_flat_test = next_batch(
-        experiment_length, control_full_test, n_steps, previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
+        experiment_length, control_full_test, n_steps, previous_output, output_full=output_full_test)  # bylo jeszcze batch_size ale z tego nie korzystam
 
     ###Testowanie na zbiorze nowym
     if option != '':
@@ -303,13 +314,16 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
             X_pred_test = sess.run(outputs, feed_dict={X: new_temp_y})
             input_prediction_test.append(X_pred_test[-1][-1])
 
-    # plt.title()
-    # plt.plot(range(0, len(control_full_test) - n_steps), control_full_test[n_steps:], "g.", markersize=10, label="instance_test")
-    # plt.plot(range(0, len(input_prediction_test)), input_prediction_test, "m.", markersize=10, label="prediction_test")
-    # plt.xlabel("Time")
-    # plt.show()
+    if ploting:
+        plt.title(title, fontsize=10)
+        plt.plot(range(0, len(control_full_test) - n_steps), control_full_test[n_steps:], "g.", markersize=5,
+                 label="instance_test")
+        plt.plot(range(0, len(input_prediction_test)), input_prediction_test, "m.", markersize=5,
+                 label="prediction_test")
+        plt.xlabel("Time")
+        plt.show()
 
-    ##MSE
+    # MSE
     try:
         mse = mean_squared_error(control_full_test[n_steps:], input_prediction_test)
     except ValueError:
@@ -320,12 +334,12 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
 
 
 def perform_identification(control_full, full_experiment_length, control_full_test, title_addon='',
-                           n_iterations_list=[10, 20, 50],  # czyli ile razy przejeżdżam przez cały zbiór danych
+                           n_iterations_list=[10, 20, 50, 80],  # czyli ile razy przejeżdżam przez cały zbiór danych
                            # batch_size_list=[2, 25],  # , 100]
                            n_neurons_list=[50, 200, 500],  # [1, 10, 100]
-                           n_steps_list=[10, 20, 30],  # czyli ile poprzednich sterowań biorę pod uwagę
+                           n_steps_list=[10, 20, 30, 40],  # czyli ile poprzednich sterowań biorę pod uwagę
                            mode='basicRNN',
-                           option='', output_full=[]):
+                           option='', output_full=[], output_full_test=[], ploting=False):
     n_inputs = 1
     n_outputs = 1
 
@@ -350,25 +364,32 @@ def perform_identification(control_full, full_experiment_length, control_full_te
 
                 mse = run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
                                        control_full, control_full_test, title, full_experiment_length,
-                                       output_full=output_full, option=option)
+                                       output_full=output_full, output_full_test=output_full_test,
+                                       option=option, ploting=ploting)
                 model_performance.append(
                     {
                         'MSE': mse,
                         'n_steps': n_steps, 'n_neurons': n_neurons, 'n_iterations': n_iterations,
+                        'title': title,
                         'identification_option': option
                     })
                 print("Model " + str(models_counter) + " of " + str(all_models_counter))
                 models_counter = models_counter + 1
 
+    with open(r"model_and_inv_model_identification_mses/model_performance" + title_addon + ".pickle" + option,
+              "wb") as output_file:
+        pickle.dump(model_performance, output_file)
+
     models_counter = 0
 
-    ##Inverse modelling
+    # Inverse modelling
     for n_iterations in n_iterations_list:
-    #    for batch_size in batch_size_list:  # poki co nie korzystam z batch size!!!
+        # for batch_size in batch_size_list:  # poki co nie korzystam z batch size!!!
         for n_steps in n_steps_list:
             for n_neurons in n_neurons_list:
                 title = "_FRAMED_INVERSE_n_iterations_" + str(n_iterations) + " n_steps_" + str(
-                    n_steps) + " n_neurons_" + str(n_neurons)  #  + " batch_size_" + str(batch_size) # poki co nie korzystam z batch size
+                    n_steps) + " n_neurons_" + str(n_neurons)   # + " batch_size_" + str(batch_size) # poki co nie
+                                                                # korzystam z batch size
                 title = title_addon + title
 
                 init, training_op, X, y, outputs, loss = construct_rnn(n_steps, n_inputs, n_outputs, n_neurons)
@@ -376,20 +397,21 @@ def perform_identification(control_full, full_experiment_length, control_full_te
                 saver = tf.train.Saver()
 
                 mse = run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
-                                         control_full, control_full_test, title, full_experiment_length, option=option)
+                                               control_full, control_full_test, title, full_experiment_length,
+                                               output_full=output_full, output_full_test=output_full_test,
+                                               option=option, ploting=ploting)
                 model_inverse_performance.append(
                     {
                         'MSE': mse,
                         'n_steps': n_steps, 'n_neurons': n_neurons, 'n_iterations': n_iterations,
+                        'title': title,
                         'identification_option': option
                     })
                 print("Inverse model " + str(models_counter) + " of " + str(all_models_inverse_counter))
                 models_counter = models_counter + 1
 
-    with open(r"model_performance.pickle", "wb") as output_file:
-        pickle.dump(model_performance, output_file)
-
-    with open(r"model_inverse_performance.pickle", "wb") as output_file:
+    with open(r"model_and_inv_model_identification_mses/model_inverse_performance" + title_addon + ".pickle" + option,
+              "wb") as output_file:
         pickle.dump(model_inverse_performance, output_file)
 
 
@@ -397,4 +419,4 @@ if __name__ == "__main__":
     full_experiment_length = 160
     control_full = [1] * int(full_experiment_length)
     control_full_test = control_full[::-1]
-    perform_identification(control_full, full_experiment_length, control_full_test)
+    perform_identification(control_full, full_experiment_length, control_full_test, ploting=True)
