@@ -91,7 +91,7 @@ def next_batch(experiment_length, control_full, n_steps, previous_output=0,
 
     y = []
     if len(output_full) == 0:
-        for i in range(0, experiment_length): #było też n_steps + 1 ale to dla błędnej koncepcji :p
+        for i in range(0, experiment_length):  #było też n_steps + 1 ale to dla błędnej koncepcji :p
             current_output = simulate_step(control_full[i], previous_output=previous_output)
             y.append(current_output)
             previous_output = current_output
@@ -139,12 +139,14 @@ def construct_rnn(n_steps, n_inputs, n_outputs, n_neurons):
 
 
 def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
-                     control_full, control_full_test, title, experiment_length, output_full=[], option=''):
+                     control_full, control_full_test, title, experiment_length, output_full=[], output_full_test=[],
+                     option='', ploting=False):
     with tf.Session() as sess:
         init.run()
         previous_output = 0
         X_batch_full, y_batch_full, previous_output, control_X_batch_flat, output_y_batch_flat = next_batch(
-            experiment_length, control_full, n_steps, previous_output, output_full=output_full)  # bylo jeszcze batch_size ale z tego nie korzystam
+            experiment_length, control_full, n_steps, previous_output, output_full=output_full)  # bylo jeszcze batch
+                                                                                                 #_size ale z tego nie korzystam
         X_batch = X_batch_full
         y_batch = y_batch_full
 
