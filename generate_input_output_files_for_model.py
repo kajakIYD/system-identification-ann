@@ -1,17 +1,29 @@
 # Create.txt file with force that should be applied to damper in each line
 from math import sin
 import subprocess
+from matplotlib import pyplot as plt
+import time
+import os
 
 import model_and_inv_model_identification
+import simulation
 
 
-def create_force_external_files(freq, sim_time_in_sec):
-    Amp_max = 100000;
+def generate_sine_force_chunk(N, Amp, omega, bias, fid, pi=3.1415):
+    force_vector = []
+    for j in range(1, N + 1):
+        value = Amp * sin(omega * j / (2 * pi)) + bias
+        fid.write(str(value) + '\n')
+        force_vector.append(value)
+
+    return force_vector
+
+
+def create_force_external_files(freq, sim_time_in_sec, scenarios_cnt=5):
+    Amp_max = 100000
 
     force_external_files = []
     force_vectors_dict = dict()
-
-    scenarios_cnt = 5
 
     N = int(freq * sim_time_in_sec / scenarios_cnt)
 
@@ -19,12 +31,10 @@ def create_force_external_files(freq, sim_time_in_sec):
 
         wholeN = N * 5
 
-        fileName = '/home/user/Documents/simEnv_2018_07_31/forceExternal_len_' + str(wholeN) + '_' + str(i) + '.txt'
+        fileName = '/home/user/Documents/simEnv_2018_07_31/forceExternal_len_' + str(N) + '_' + str(i) + '.txt'
         force_external_files.append(fileName)
 
         force_vector = []
-
-        pi = 3.1416
 
         with open(fileName, "w") as fid:
 
@@ -32,46 +42,31 @@ def create_force_external_files(freq, sim_time_in_sec):
             omega = 0.1 / i
             bias = 1000 / i
 
-            for j in range(1, N+1):
-                value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value) + '\n')
-                force_vector.append(value)
+            force_vector = force_vector + generate_sine_force_chunk(N, Amp, omega, bias, fid)
 
             Amp = Amp_max / 1.2 / i
             omega = 0.01 / i
             bias = 100 / i
 
-            for j in range(1, N + 1):
-                value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value) + '\n')
-                force_vector.append(value)
+            # force_vector = force_vector + generate_sine_force_chunk(N, Amp, omega, bias, fid)
 
             Amp = Amp_max / 1.3 / i
             omega = 0.05 / i
             bias = 500 / i
 
-            for j in range(1, N+1):
-                value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value) + '\n')
-                force_vector.append(value)
+            # force_vector = force_vector + generate_sine_force_chunk(N, Amp, omega, bias, fid)
 
             Amp = Amp_max / 1.4 / i
             omega = 0.02 / i
             bias = 500 / i
 
-            for j in range(1, N+1):
-                value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value) + '\n')
-                force_vector.append(value)
+            # force_vector = force_vector + generate_sine_force_chunk(N, Amp, omega, bias, fid)
 
             Amp = Amp_max / 0.5 / i
             omega = 0.03 / i
             bias = 300 / i
 
-            for j in range(1, N+1):
-                value = Amp * sin(omega * j / (2 * pi)) + bias
-                fid.write(str(value) + '\n')
-                force_vector.append(value)
+            # force_vector = force_vector + generate_sine_force_chunk(N, Amp, omega, bias, fid)
 
             force_vectors_dict[fileName] = force_vector
 
