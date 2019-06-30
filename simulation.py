@@ -76,7 +76,7 @@ sim_time_const = 10
 sample_rate_hz_const = 500
 def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_const,
          dt=0.1, SP=sim_time_const * [0], mse_calc=True,
-         plotting=False, suspension_simulation=False):
+         plotting=False, suspension_simulation=False, path_to_save_mses=''):
     # SP = model_and_inv_model_identification.generate_sine(int(30 / 0.1), 1, 0.1)
     # model_inverse_performance, model_performance = unpickle_model_and_model_inverse_performance()
 
@@ -86,6 +86,7 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
     mses_all = []
 
     models_loop_counter = 0
+    all_models_counter = len(titles_model_data) * len(titles_model_inverse_data)
 
     for title_model_inverse_data in titles_model_inverse_data:
         for title_model_data in titles_model_data:
@@ -137,8 +138,9 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
             loop_counter = 1
 
             # inertia parameters
-            a = 1
-            b = 0.1
+            if not suspension_simulation:
+                a = 1
+                b = 0.1
 
             if suspension_simulation:
                 path_to_simulator_executable = "/home/user/Documents/simEnv_2018_07_31/simProgram"
@@ -175,7 +177,7 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
                 plant_control.append(current_control)
                 if suspension_simulation:
                     # send control
-                    if (conn.sendall(str(current_control).encode()) == None):
+                    if conn.sendall(str(current_control).encode()) is None:
                         # conn.sendall(bytearray(str(1111.11), 'utf-8'))
                         try:
                             #receive suspension output
@@ -211,11 +213,20 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
                 print("C suspension simulator killed!")
 
             if plotting:
-                plt.plot(range(0, len(disturbed_plant_output)), disturbed_plant_output, "b.", label="Disturbed plant output")
-                plt.plot(range(0, len(plant_control)), plant_control, "r.", label="Inverse model output (control)")
-                plt.plot(range(0, len(model_plant_disturbed_difference)), model_plant_disturbed_difference, "g.", label="Disturbed plant - model_output")
-                plt.plot(range(0, len(SP_feedback_difference)), SP_feedback_difference, "m.", label="SP_feedback_difference")
-                plt.plot(range(0, len(SP)), SP, "y-", label="SP")
+                fig, ax1 = plt.subplots()
+                ax1.plot(range(0, len(disturbed_plant_output)), disturbed_plant_output, "b.", label="Disturbed plant output")
+                ax1.plot(range(0, len(SP)), SP, "y-", label="SP")
+                ax1.plot(range(0, len(model_plant_disturbed_difference)), model_plant_disturbed_difference, "g.", label="Disturbed plant - model_output")
+                ax1.plot(range(0, len(SP_feedback_difference)), SP_feedback_difference, "m.", label="SP_feedback_difference")
+                ax1.set_xlabel('Probes')
+                # Make the y-axis label, ticks and tick labels match the line color.
+                ax1.set_ylabel('velocity, m/s', color='b')
+                ax1.tick_params('y', colors='b')
+                ax2 = ax1.twinx()
+                ax2.plot(range(0, len(plant_control)), plant_control, "r.", label="Inverse model output (control)")
+                ax2.set_ylabel('Control', color='r')
+                ax2.tick_params('y', colors='r')
+                fig.tight_layout()
                 plt.legend()
                 plt.xlabel("Time")
                 plt.title("model_inverse: neurons" + str(n_neurons_inverse_model) + " steps" + str(n_steps_inverse_model)
@@ -227,7 +238,7 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
             models_loop_counter = models_loop_counter + 1
 
             print("Model: " + str(models_loop_counter) + " out of: " +
-                  str(len(titles_model_data) * len(titles_model_inverse_data)))
+                  str(all_models_counter))
 
             if mse_calc:
                 if not (True in np.isnan(disturbed_plant_output)):
@@ -235,8 +246,8 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
                                 'model_title': title_model, 'model_inverse_title': title_model_inverse})
 
                 if (models_loop_counter % 50 == 0 and not models_loop_counter == 0) \
-                        or (len(titles_model_data) * len(titles_model_inverse_data) - models_loop_counter) < 50:
-                    pickle_object(mses, "mses_" + str(models_loop_counter) + ".pkl")
+                        or (all_models_counter - models_loop_counter) < 50:
+                    pickle_object(mses, path_to_save_mses + "mses_" + str(models_loop_counter) + ".pkl")
                     mses_all = mses_all + mses
                     mses.clear()
 
@@ -267,6 +278,8 @@ def compile_proper_simulator_in_TCP_mode(mode='active_suspension'):
             line = line.replace(r"#define ROAD_EXC_OFF", r"//#define ROAD_EXC_OFF")
         if r"//#define SIN_FREQ_ROAD_EXC" in line:
             line = line.replace(r"//#define SIN_FREQ_ROAD_EXC", r"#define SIN_FREQ_ROAD_EXC")
+        if r"//#define NO_BYPASS_CONTROL" in line:
+            line = line.replace(r"//#define NO_BYPASS_CONTROL", r"#define NO_BYPASS_CONTROL")
 
         content_modified = content_modified + line + '\n'
 
@@ -285,6 +298,9 @@ def compile_proper_simulator_in_TCP_mode(mode='active_suspension'):
             line = line.replace(r"ROAD_EXC = roadExcOff", r"#ROAD_EXC = roadExcOff")
         if r"#ROAD_EXC = sinFreqRoadExc" in line:
             line = line.replace(r"#ROAD_EXC = sinFreqRoadExc", r"ROAD_EXC = sinFreqRoadExc")
+        if r"#ROAD_EXC = tcp_control" in line:
+            line = line.replace(r"#ROAD_EXC = tcp_control", r"ROAD_EXC = tcp_control")
+
 
         content_modified = content_modified + line + '\n'
 
@@ -300,13 +316,22 @@ def compile_proper_simulator_in_TCP_mode(mode='active_suspension'):
     subprocess.run(args_list)
 
 
+def simulation_TCP(title_model_inverse_data, title_model_data, mse_calc=False, plotting=True):
+    compile_proper_simulator_in_TCP_mode(mode='active_suspension')
+
+    main(title_model_inverse_data, title_model_data, dt=1 / sample_rate_hz_const, simulation_time=sim_time_const,
+         SP=sim_time_const * sample_rate_hz_const * [0], mse_calc=mse_calc, suspension_simulation=True,
+         plotting=plotting)
+
+
 if __name__ == "__main__":
     compile_proper_simulator_in_TCP_mode(mode='active_suspension')
 
     titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data(
-                                                   directory_in_str="./active_suspension_modelling_checkpoints")
+                                                   directory_in_str="/home/user/Documents/test")# ./active_suspension_modelling_checkpoints")
     # titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data\
     #                                                 ("./inertia_modelling_checkpoints")
 
-    main(titles_model_inverse_data[:3], titles_model_data[:3], dt=1/sample_rate_hz_const, simulation_time=sim_time_const,
-         SP=sim_time_const * sample_rate_hz_const * [0], suspension_simulation=True, plotting=True)
+    main(titles_model_inverse_data, titles_model_data, dt=1/sample_rate_hz_const, simulation_time=sim_time_const,
+         SP=sim_time_const * sample_rate_hz_const * [0], suspension_simulation=True, plotting=False,
+         path_to_save_mses='/home/user/Documents/system-identification-ann/active_suspension_simulation_performances/')
