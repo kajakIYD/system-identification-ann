@@ -39,6 +39,7 @@ def save_fig(fig_id, tight_layout=True):
 a = 1
 b = 0.1
 
+
 def calculate_inverse_static_characteristic(y):
     return b * y
 
