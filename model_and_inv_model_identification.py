@@ -26,7 +26,8 @@ def generate_rectangle(time, amplitude, period, dt=1):
     return output
 
 
-def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_addon='SINGLE_SINE_TRAINED'):
+def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_addon='SINGLE_SINE_TRAINED',
+         ploting=False):
 
     if option == 'inertia_modelling':
         full_experiment_length = 0
@@ -84,7 +85,8 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
 
         control_full_test = [item + random.uniform(-0.2, 0.2) for item in control_full[::-1]]
 
-        inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test, "_MIXED_")
+        inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test, "_MIXED_",
+                                                 ploting=True)
     elif option == 'u_y_from_file':
 
         if len(input_file_list) == 0 and len(output_file_list) == 0:
@@ -107,13 +109,16 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
 
             full_experiment_length = len(control_full)
             control_full_test = [item + random.uniform(-0.2, 0.2) for item in control_full[::-1]]
+            output_full_test = output_full  # TODO!!! OUTPUT CALCULATED USING DISTURBED INPUT!!!!
 
             inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test,
                                                      title_addon=title_addon + input_file_title + "_" + output_file_title,
-                                                     option=option, output_full=output_full)
+                                                     option=option, output_full=output_full,
+                                                     output_full_test=output_full_test, ploting=ploting)
 
-    print("FINISHED!!!!!")
+    print("FINISHED model_and_inv_model_identification!!!!!")
 
 
 if __name__ == "__main__":
-    main(option='u_y_from_file')
+    main(option='inertia_modelling')
+    # main(option='u_y_from_file')
