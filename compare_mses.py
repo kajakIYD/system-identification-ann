@@ -179,8 +179,8 @@ def analyze_simulation_mses_and_run_simulations():
 def main():
     # analyze_identification_mses_and_run_simulations()
     # analyze_simulation_mses_and_run_simulations()
-    compare_best_identification_vs_best_simulation_performance('./inertia_simulation_performances/mses_3600.pkl',
-                                                               'sorted_modelling_performances.pkl')
+    compare_best_identification_vs_best_simulation_performance('sorted_modelling_performances.pkl',
+                                                               './inertia_simulation_performances/mses_3600.pkl')
 
 
 if __name__ == "__main__":
