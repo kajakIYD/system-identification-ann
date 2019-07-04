@@ -74,7 +74,7 @@ def simulate_single_simulation(single_simulation_dict, suspension_simulation=Tru
 
 
 def analyze_identification_mses_and_run_simulations():
-    identification_performances = extract_identification_performances(directory_in_str="./mses_old")
+    identification_performances = extract_identification_performances(directory_in_str="./inertia_modelling_performances")
 
     mses_vals = []
 
@@ -152,7 +152,9 @@ def analyze_simulation_mses_and_run_simulations():
 
 def main():
     # analyze_identification_mses_and_run_simulations()
-    analyze_simulation_mses_and_run_simulations()
+    # analyze_simulation_mses_and_run_simulations()
+    compare_best_identification_vs_best_simulation_performance('./inertia_simulation_performances/mses_3600.pkl',
+                                                               'sorted_modelling_performances.pkl')
 
 
 if __name__ == "__main__":
