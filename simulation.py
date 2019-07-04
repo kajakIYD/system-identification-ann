@@ -72,6 +72,34 @@ def pickle_object(object, file_name="pickled_object.pkl"):
         pickle.dump(object, output_file)
 
 
+def calc_ise(output, SP, dt):
+    ise = 0
+    for out_probe, SP_probe in zip(output, SP):
+        error = (out_probe - SP_probe) ** 2 * dt
+        ise = ise + error
+
+    return ise
+
+
+def calc_iae(output, SP, dt):
+    iae = 0
+    for out_probe, SP_probe in zip(output, SP):
+        error = abs(out_probe - SP_probe) * dt
+        iae = iae + error
+
+    return iae
+
+
+def calc_itae(output, SP, dt):
+    itae = 0
+    probes_count = 1
+    for out_probe, SP_probe in zip(output, SP):
+        error = abs(out_probe - SP_probe) * dt
+        itae = itae + probes_count * dt * error
+
+    return itae
+
+
 sim_time_const = 10
 sample_rate_hz_const = 500
 def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_const,
@@ -243,6 +271,9 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
             if mse_calc:
                 if not (True in np.isnan(disturbed_plant_output)):
                     mses.append({'mse': mean_squared_error(disturbed_plant_output, SP),
+                                 'ise': calc_ise(disturbed_plant_output, SP, dt),
+                                 'iae': calc_iae(disturbed_plant_output, SP, dt),
+                                 'itae': calc_itae(disturbed_plant_output, SP, dt),
                                 'model_title': title_model, 'model_inverse_title': title_model_inverse})
 
                 if (models_loop_counter % 50 == 0 and not models_loop_counter == 0) \
