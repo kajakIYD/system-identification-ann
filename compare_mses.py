@@ -25,13 +25,14 @@ def sort_performanes_by(performances, key='mse'):
             performances_flat.append(item)
 
     sorted_performances = sorted(performances_flat, key=lambda k: k['mse'])
+    return sorted_performances
 
 
 # Check if best identification performance means best simulation performance
 def compare_best_identification_vs_best_simulation_performance(identification_performance_filepath,
                                                                simulation_performance_filepath):
-    ident_perf_dict = unpickle_object(identification_performance_filepath)
-    sim_perf_dict = unpickle_object(simulation_performance_filepath)
+    ident_perf_dict = sort_performanes_by(unpickle_object(identification_performance_filepath))
+    sim_perf_dict = sort_performanes_by(unpickle_object(simulation_performance_filepath))
 
     for y in ident_perf_dict:
         print(y, ':', ident_perf_dict[y])
