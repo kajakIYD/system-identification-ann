@@ -5,9 +5,11 @@ import matplotlib.pyplot as plt
 import pickle
 from pathlib import Path
 from sklearn.metrics import mean_squared_error
+from random import seed
 
 import inertia_modelling
 import model_and_inv_model_identification
+import random_number_generator
 
 import subprocess
 import os
@@ -76,11 +78,18 @@ sim_time_const = 10
 sample_rate_hz_const = 500
 def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_const,
          dt=0.1, SP=sim_time_const * [0], mse_calc=True,
-         plotting=False, suspension_simulation=False, path_to_save_mses=''):
+         plotting=False, suspension_simulation=False, path_to_save_mses='', mses_pickle_name='',
+         apply_disturbances=True):
     # SP = model_and_inv_model_identification.generate_sine(int(30 / 0.1), 1, 0.1)
     # model_inverse_performance, model_performance = unpickle_model_and_model_inverse_performance()
 
     plt.rcParams.update({'font.size': 6})
+
+    if apply_disturbances and not suspension_simulation:
+        seed(42)
+        SP_abs = [abs(number) for number in SP]
+        uniform_noise_generator_lower_bound = -0.02 * max(SP_abs)
+        uniform_noise_generator_upper_bound = 0.02 * max(SP_abs)
 
     mses = []
     mses_all = []
@@ -194,7 +203,12 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
                     plant_output.append(inertia_modelling.simulate_step(current_control,
                                                                         plant_output[loop_counter - 1], a, b))
 
-                disturbances = 0
+                if apply_disturbances:
+                    disturbances = random_number_generator.generate_uniform_noise_probe(uniform_noise_generator_lower_bound,
+                                                                                        uniform_noise_generator_upper_bound)
+                else:
+                    disturbances = 0
+
                 disturbed_plant_output.append(plant_output[-1] + disturbances)
 
                 previous_model_plant_disturbed_difference = previous_model_plant_disturbed_difference[1:]
@@ -258,7 +272,7 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
 
         print(mses_all[min_mse_index])
 
-        pickle_object(mses, "mses.pkl")
+        pickle_object(mses, "mses_" + mses_pickle_name + "pkl")
 
 
 def compile_proper_simulator_in_TCP_mode(mode='active_suspension'):
@@ -325,13 +339,18 @@ def simulation_TCP(title_model_inverse_data, title_model_data, mse_calc=False, p
 
 
 if __name__ == "__main__":
-    compile_proper_simulator_in_TCP_mode(mode='active_suspension')
+    # compile_proper_simulator_in_TCP_mode(mode='active_suspension')
+    #
+    # titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data(
+    #                                                directory_in_str="/home/user/Documents/test")# ./active_suspension_modelling_checkpoints")
+    # main(titles_model_inverse_data, titles_model_data, dt=1/sample_rate_hz_const, simulation_time=sim_time_const,
+    #      SP=sim_time_const * sample_rate_hz_const * [0], suspension_simulation=True, plotting=False,
+    #      path_to_save_mses='/home/user/Documents/system-identification-ann/active_suspension_simulation_performances/')
 
-    titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data(
-                                                   directory_in_str="/home/user/Documents/test")# ./active_suspension_modelling_checkpoints")
-    # titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data\
-    #                                                 ("./inertia_modelling_checkpoints")
+    titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data\
+                                                    ("./inertia_modelling_checkpoints")
 
-    main(titles_model_inverse_data, titles_model_data, dt=1/sample_rate_hz_const, simulation_time=sim_time_const,
-         SP=sim_time_const * sample_rate_hz_const * [0], suspension_simulation=True, plotting=False,
-         path_to_save_mses='/home/user/Documents/system-identification-ann/active_suspension_simulation_performances/')
+    main(titles_model_inverse_data, titles_model_data, dt=0.01, simulation_time=10,
+         SP=model_and_inv_model_identification.generate_rectangle(10, 1, 2, dt=0.01), suspension_simulation=False,
+         plotting=False, path_to_save_mses='./inertia_simulation_performances_disturbed/', mses_pickle_name='inertia',
+         apply_disturbances=True)
