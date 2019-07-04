@@ -119,8 +119,8 @@ def analyze_identification_mses_and_run_simulations():
 
     print(best_identification)
 
-    simulation.pickle_object(best_identification, "best_simulation.pkl")
-    simulation.pickle_object(sorted_identification_performances, "sorted_simulation_performances.pkl")
+    simulation.pickle_object(best_identification, "best_identification.pkl")
+    simulation.pickle_object(sorted_identification_performances, "sorted_modelling_performances.pkl")
 
     # simulate_single_simulation(best_simulation, suspension_simulation=True)
     #
