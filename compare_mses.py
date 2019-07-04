@@ -15,6 +15,31 @@ def unpickle_object(path):
     return object_to_unpickle
 
 
+def sort_performanes_by(performances, key='mse'):
+    performances_flat = []
+    mses_vals = []
+
+    for item in performances:
+        if len(item) > 0:
+            mses_vals.append(item[key])
+            performances_flat.append(item)
+
+    sorted_performances = sorted(performances_flat, key=lambda k: k['mse'])
+
+
+# Check if best identification performance means best simulation performance
+def compare_best_identification_vs_best_simulation_performance(identification_performance_filepath,
+                                                               simulation_performance_filepath):
+    ident_perf_dict = unpickle_object(identification_performance_filepath)
+    sim_perf_dict = unpickle_object(simulation_performance_filepath)
+
+    for y in ident_perf_dict:
+        print(y, ':', ident_perf_dict[y])
+
+    for y in sim_perf_dict:
+        print(y, ':', ident_perf_dict[y])
+
+
 def extract_identification_performances(directory_in_str="."):
     identification_performances = []
 
