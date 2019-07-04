@@ -256,21 +256,21 @@ def main(titles_model_inverse_data, titles_model_data, simulation_time=sim_time_
 
             if plotting:
                 fig, ax1 = plt.subplots()
-                ax1.plot(range(0, len(disturbed_plant_output)), disturbed_plant_output, "b.", label="Disturbed plant output")
+                ax1.plot(range(0, len(disturbed_plant_output)), disturbed_plant_output, "b-", label="Disturbed plant output")
                 ax1.plot(range(0, len(SP)), SP, "y-", label="SP")
-                ax1.plot(range(0, len(model_plant_disturbed_difference)), model_plant_disturbed_difference, "g.", label="Disturbed plant - model_output")
-                ax1.plot(range(0, len(SP_feedback_difference)), SP_feedback_difference, "m.", label="SP_feedback_difference")
+                ax1.plot(range(0, len(model_plant_disturbed_difference)), model_plant_disturbed_difference, "g-",
+                         label="Disturbed plant - model_output")
+                ax1.plot(range(0, len(SP_feedback_difference)), SP_feedback_difference, "m-", label="SP_feedback_difference")
                 ax1.set_xlabel('Probes')
                 # Make the y-axis label, ticks and tick labels match the line color.
-                ax1.set_ylabel('velocity, m/s', color='b')
+                ax1.set_ylabel('Output', color='b')
                 ax1.tick_params('y', colors='b')
                 ax2 = ax1.twinx()
-                ax2.plot(range(0, len(plant_control)), plant_control, "r.", label="Inverse model output (control)")
+                ax2.plot(range(0, len(plant_control)), plant_control, "r-", label="Inverse model output (control)")
                 ax2.set_ylabel('Control', color='r')
                 ax2.tick_params('y', colors='r')
                 fig.tight_layout()
-                plt.legend()
-                plt.xlabel("Time")
+                plt.legend() # TODO: Fix bad legend ploting (did it somewhere already)
                 plt.title("model_inverse: neurons" + str(n_neurons_inverse_model) + " steps" + str(n_steps_inverse_model)
                           + " n_iterations:" + str(n_iterations_model_inverse) + "model: neurons "
                           + str(n_neurons_model) + " steps" + str(n_steps_inverse_model)
