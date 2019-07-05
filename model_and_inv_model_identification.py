@@ -124,4 +124,3 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
 
 if __name__ == "__main__":
     main(option='inertia_modelling')
-    # main(option='u_y_from_file')
