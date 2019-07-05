@@ -100,13 +100,13 @@ def next_batch(experiment_length, control_full, n_steps, previous_output=0,
 
     ys = np.asarray([np.asarray(y)])
 
-    control_X_batch = np.asarray([control_full]).reshape(-1, n_steps, 1)
-    output_y_batch = ys.reshape(-1, n_steps, 1)
+    control_X_batch = []  # np.asarray([control_full]).reshape(-1, n_steps, 1)
+    output_y_batch = []  # ys.reshape(-1, n_steps, 1)
 
     control_X_batch_flat = control_full
     output_y_batch_flat = y
 
-    return control_X_batch, output_y_batch, previous_output, control_X_batch_flat, output_y_batch_flat # ys1, ys2, previous_output
+    return control_X_batch, output_y_batch, previous_output, control_X_batch_flat, output_y_batch_flat
 
 
 def construct_rnn(n_steps, n_inputs, n_outputs, n_neurons):
