@@ -33,9 +33,10 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
         full_experiment_length = 0
 
         experiment_length_part = 400
-        amplitude = 3
-        omega = 0.1
-        control_full = generate_sine(experiment_length_part, amplitude, omega)
+        # amplitude = 3
+        # omega = 0.1
+        # control_full = generate_sine(experiment_length_part, amplitude, omega)
+        control_full = generate_rectangle(experiment_length_part, amplitude=2, period=80, dt=1)
 
         full_experiment_length = full_experiment_length + experiment_length_part
 
