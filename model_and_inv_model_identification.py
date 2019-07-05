@@ -26,7 +26,7 @@ def generate_rectangle(time, amplitude, period, dt=1):
     return output
 
 
-def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_addon='SINGLE_SINE_TRAINED',
+def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_addon='_MIXED_',
          ploting=False):
 
     if option == 'inertia_modelling':
@@ -85,8 +85,10 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
 
         control_full_test = [item + random.uniform(-0.2, 0.2) for item in control_full[::-1]]
 
-        inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test, "_MIXED_",
-                                                 ploting=True)
+        inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test,
+                                                 title_addon="",
+                                                 ploting=False,
+                                                 training_signal_addon="inertia_modelling_checkpoints_RECTANGLE_A2_P80_dt1_400probes_TRAINED")
     elif option == 'u_y_from_file':
 
         if len(input_file_list) == 0 and len(output_file_list) == 0:
