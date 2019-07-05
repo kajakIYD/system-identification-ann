@@ -99,7 +99,7 @@ def simulate_single_simulation(single_simulation_dict, suspension_simulation=Tru
                         mse_calc=False, plotting=True)
 
 
-def analyze_identification_mses_and_run_simulations():
+def analyze_identification_mses_and_run_simulations(suspension_simulation=False):
     identification_performances = extract_identification_performances(directory_in_str="./inertia_modelling_performances")
 
     mses_vals = []
@@ -123,26 +123,26 @@ def analyze_identification_mses_and_run_simulations():
     simulation.pickle_object(best_identification, "best_identification.pkl")
     simulation.pickle_object(sorted_identification_performances, "sorted_modelling_performances.pkl")
 
-    # simulate_single_simulation(best_simulation, suspension_simulation=True)
+    # simulate_single_simulation(best_simulation, suspension_simulation=suspension_simulation)
     #
-    # simulate_single_simulation(sorted_identification_performances[10], suspension_simulation=True)
+    # simulate_single_simulation(sorted_identification_performances[10], suspension_simulation=suspension_simulation)
     # #
-    # simulate_single_simulation(sorted_identification_performances[50], suspension_simulation=True)
+    # simulate_single_simulation(sorted_identification_performances[50], suspension_simulation=suspension_simulation)
     #
-    simulate_single_simulation(sorted_identification_performances[100], suspension_simulation=True)
+    simulate_single_simulation(sorted_identification_performances[100], suspension_simulation=suspension_simulation)
     #
-    simulate_single_simulation(sorted_identification_performances[200], suspension_simulation=True)
+    simulate_single_simulation(sorted_identification_performances[200], suspension_simulation=suspension_simulation)
     #
-    # simulate_single_simulation(sorted_identification_performances[500], suspension_simulation=True)
+    # simulate_single_simulation(sorted_identification_performances[500], suspension_simulation=suspension_simulation)
 
-    simulate_single_simulation(sorted_identification_performances[-10], suspension_simulation=True)
+    simulate_single_simulation(sorted_identification_performances[-10], suspension_simulation=suspension_simulation)
 
-    simulate_single_simulation(sorted_identification_performances[-1], suspension_simulation=True)
+    simulate_single_simulation(sorted_identification_performances[-1], suspension_simulation=suspension_simulation)
     #
     # simulate_single_simulation(sorted_simulation_performances[-100])
 
 
-def analyze_simulation_mses_and_run_simulations():
+def analyze_simulation_mses_and_run_simulations(suspension_simulation=False):
     simulation_performances = extract_simulation_performances(directory_in_str="./active_suspension_simulation_performances")
 
     mses_vals = []
@@ -165,20 +165,20 @@ def analyze_simulation_mses_and_run_simulations():
     simulation.pickle_object(best_simulation, "best_simulation.pkl")
     simulation.pickle_object(sorted_simulation_performances, "sorted_simulation_performances.pkl")
 
-    simulate_single_simulation(best_simulation, suspension_simulation=True)
+    simulate_single_simulation(best_simulation, suspension_simulation=suspension_simulation)
 
-    simulate_single_simulation(sorted_simulation_performances[10], suspension_simulation=True)
+    simulate_single_simulation(sorted_simulation_performances[10], suspension_simulation=suspension_simulation)
 
-    simulate_single_simulation(sorted_simulation_performances[-10], suspension_simulation=True)
+    simulate_single_simulation(sorted_simulation_performances[-10], suspension_simulation=suspension_simulation)
 
-    simulate_single_simulation(sorted_simulation_performances[-1], suspension_simulation=True)
+    simulate_single_simulation(sorted_simulation_performances[-1], suspension_simulation=suspension_simulation)
     #
     # simulate_single_simulation(sorted_simulation_performances[-100])
 
 
 def main():
-    # analyze_identification_mses_and_run_simulations()
-    # analyze_simulation_mses_and_run_simulations()
+    analyze_identification_mses_and_run_simulations(suspension_simulation=False)
+    # analyze_simulation_mses_and_run_simulations(suspension_simulation=False)
     compare_best_identification_vs_best_simulation_performance('sorted_modelling_performances.pkl',
                                                                './inertia_simulation_performances/mses_3600.pkl')
 
