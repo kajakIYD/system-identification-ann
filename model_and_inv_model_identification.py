@@ -26,70 +26,127 @@ def generate_rectangle(time, amplitude, period, dt=1):
     return output
 
 
+def generate_identifacation_signal_inverse(control_full, suspension_modeling=False, ploting=False, title='Identification signal type 1 for inverse model'):
+    previous_output = 0
+    identification_signal_inverse = []
+
+    for control in control_full:
+        current_output = inertia_modelling.simulate_step(control, previous_output,
+                                                         inertia_modelling.a, inertia_modelling.b)
+        identification_signal_inverse.append(current_output)
+        previous_output = current_output
+
+    if ploting:
+        plt.plot(identification_signal_inverse)
+        plt.title(title)
+        plt.show()
+        # plt.show(block=False)  # but this option closes window immediately
+
+    return identification_signal_inverse
+
+
+def generate_identification_signal_1(ploting=False):
+    experiment_length_part = 1200
+
+    control_full = generate_rectangle(experiment_length_part, amplitude=2, period=80, dt=1)
+
+    if ploting:
+        plt.plot(range(len(control_full)), control_full)
+        plt.title("Whole control that will be aplied to experiment")
+        plt.show()
+        # plt.show(block=False)  # but this option closes window immediately
+
+    return control_full
+
+
+def generate_identification_signal_2(ploting=False):
+    experiment_length_part = 400
+    amplitude = 3
+    omega = 0.1
+    control_full = generate_sine(experiment_length_part, amplitude, omega)
+
+    experiment_length_part = 500
+    amplitude = 2
+    period = 100
+    control_full = control_full + generate_rectangle(experiment_length_part, amplitude, period)
+
+    experiment_length_part = 400
+    amplitude = 1
+    omega = 0.05
+    control_full = control_full + generate_sine(experiment_length_part, amplitude, omega)
+
+    experiment_length_part = 200
+    amplitude = -3
+    control_full = control_full + generate_step(experiment_length_part, amplitude)
+
+    experiment_length_part = 700
+    amplitude = 1
+    omega = 0.01
+    control_full = control_full + generate_sine(experiment_length_part, amplitude, omega)
+
+    experiment_length_part = 200
+    amplitude = 1
+    control_full = control_full + generate_step(experiment_length_part, amplitude)
+
+    experiment_length_part = 600
+    amplitude = 0.5
+    period = 200
+    control_full = control_full + generate_rectangle(experiment_length_part, amplitude, period)
+
+    if ploting:
+        plt.plot(range(len(control_full)), control_full)
+        plt.title("Whole control that will be aplied to experiment")
+        plt.show()
+        # plt.show(block=False)  # but this option closes window immediately
+
+    return control_full
+
+
+def generate_test_signal(ploting=False):
+    part1 = generate_rectangle(120, 2, 60)
+    part1 = [item + random.uniform(-0.1, 0.1) for item in part1]
+
+    part2 = generate_rectangle(240, 5, 80)
+    part2 = [item + random.uniform(-0.2, 0.2) for item in part2]
+
+    part3 = generate_rectangle(120, 1, 30)
+    part3 = [item + random.uniform(-0.05, 0.05) for item in part3]
+
+    test_signal = []
+    test_signal = part1 + part2 + part3
+
+    if ploting:
+        plt.plot(range(len(test_signal)), test_signal)
+        plt.title("Test signal")
+        plt.xlabel("Probes")
+        plt.grid()
+        plt.show()
+        # plt.show(block=False)  # but this option closes window immediately
+
+    return test_signal
+
+
 def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_addon='_MIXED_',
          ploting=False):
 
     if option == 'inertia_modelling':
-        full_experiment_length = 0
+        # control_full = generate_identification_signal_1(ploting=ploting)
+        #
+        # control_full_test = generate_test_signal(ploting=ploting)
+        #
+        # inertia_modelling.perform_identification(control_full, len(control_full), control_full_test,
+        #                                          title_addon="",
+        #                                          ploting=ploting,
+        #                                          training_signal_addon="inertia_modelling_checkpoints_RECTANGLE_A2_P80_dt1_1200probes_TRAINED")
 
-        experiment_length_part = 400
-        # amplitude = 3
-        # omega = 0.1
-        # control_full = generate_sine(experiment_length_part, amplitude, omega)
-        control_full = generate_rectangle(experiment_length_part, amplitude=2, period=80, dt=1)
+        control_full = generate_identification_signal_2(ploting=ploting)
 
-        full_experiment_length = full_experiment_length + experiment_length_part
+        control_full_test = generate_test_signal(ploting=ploting)
 
-        # experiment_length_part = 500
-        # amplitude = 2
-        # period = 100
-        # control_full = control_full + generate_rectangle(experiment_length_part, amplitude, period)
-        #
-        # full_experiment_length = full_experiment_length + experiment_length_part
-        #
-        # experiment_length_part = 400
-        # amplitude = 1
-        # omega = 0.05
-        # control_full = control_full + generate_sine(experiment_length_part, amplitude, omega)
-        #
-        # full_experiment_length = full_experiment_length + experiment_length_part
-        #
-        # experiment_length_part = 200
-        # amplitude = -3
-        # control_full = control_full + generate_step(experiment_length_part, amplitude)
-        #
-        # full_experiment_length = full_experiment_length + experiment_length_part
-
-        # experiment_length_part = 700
-        # amplitude = 1
-        # omega = 0.01
-        # control_full = control_full + generate_sine(experiment_length_part, amplitude, omega)
-        #
-        # full_experiment_length = full_experiment_length + experiment_length_part
-        #
-        # experiment_length_part = 200
-        # amplitude = 1
-        # control_full = control_full + generate_step(experiment_length_part, amplitude)
-        #
-        # full_experiment_length = full_experiment_length + experiment_length_part
-        #
-        # experiment_length_part = 600
-        # amplitude = 0.5
-        # period = 200
-        # control_full = control_full + generate_rectangle(experiment_length_part, amplitude, period)
-        #
-        # full_experiment_length = full_experiment_length + experiment_length_part
-
-        # plt.plot(range(full_experiment_length), control_full)
-        # plt.title("Whole control that will be aplied to experiment")
-        # plt.show(block=False) # but this option closes window immediately
-
-        control_full_test = [item + random.uniform(-0.2, 0.2) for item in control_full[::-1]]
-
-        inertia_modelling.perform_identification(control_full, full_experiment_length, control_full_test,
+        inertia_modelling.perform_identification(control_full, len(control_full), control_full_test,
                                                  title_addon="",
-                                                 ploting=False,
-                                                 training_signal_addon="inertia_modelling_checkpoints_RECTANGLE_A2_P80_dt1_400probes_TRAINED")
+                                                 ploting=ploting,
+                                                 training_signal_addon="inertia_modelling_checkpoints_MIXED_TRAINED")
     elif option == 'u_y_from_file':
 
         if len(input_file_list) == 0 and len(output_file_list) == 0:
@@ -123,4 +180,4 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
 
 
 if __name__ == "__main__":
-    main(option='inertia_modelling')
+    main(option='inertia_modelling', ploting=False)
