@@ -125,28 +125,6 @@ def construct_rnn(n_steps, n_inputs, n_outputs, n_neurons):
     return init, training_op, X, y, outputs, loss
 
 
-# def plot_training_instance():
-#     plt.figure(figsize=(11, 4))
-#     plt.subplot(121)
-#     plt.title("A time series (generated)", fontsize=14)
-#     plt.plot(t, time_series(t), label=r"$t . \sin(t) / 3 + 2 . \sin(5t)$")
-#     plt.plot(t_instance[:-1], time_series(t_instance[:-1]), "b-", linewidth=3, label="A training instance")
-#     plt.legend(loc="lower left", fontsize=14)
-#     plt.axis([0, 30, -17, 13])
-#     plt.xlabel("Time")
-#     plt.ylabel("Value")
-#
-#     plt.subplot(122)
-#     plt.title("A training instance", fontsize=14)
-#     plt.plot(t_instance[:-1], time_series(t_instance[:-1]), "bo", markersize=10, label="instance")
-#     plt.plot(t_instance[1:], time_series(t_instance[1:]), "w*", markersize=10, label="target")
-#     plt.legend(loc="upper left")
-#     plt.xlabel("Time")
-#
-#     save_fig(title)
-#     # plt.show()
-
-
 def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title):
     with tf.Session() as sess:
         init.run()
@@ -164,11 +142,11 @@ def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations
             #     mse = loss.eval(feed_dict={X: X_batch, y: y_batch})
             #     print(iteration, "\tMSE:", mse)
 
-        saver.save(sess, "./inertia_modelling_checkpoints/my_time_series_model"  + title)  # not shown in the book
+        saver.save(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model"  + title)  # not shown in the book
 
     ###Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
     with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
+        saver.restore(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown
         X_new = X_batch
         y_pred = sess.run(outputs, feed_dict={X: X_new})
 
@@ -176,20 +154,22 @@ def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations
     plt.plot(range(0, n_steps), y_batch[0, :, 0], "bo", markersize=10, label="instance")
     plt.plot(range(0, n_steps), y_pred[0, :, 0], "r.", markersize=10, label="prediction")
 
-    control_full_test = [2] * n_steps
+    control_full_test = [2] * n_steps * 2 + [-2] * n_steps * 2
     previous_output = 0
 
     ###Testowanie na zbiorze nowym
     with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
+        saver.restore(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown
 
         X_new = np.asarray(control_full_test).reshape(-1, n_steps, 1)
         y_pred_test = sess.run(outputs, feed_dict={X: X_new})
 
-    unused1, y_batch_test, unused2 = next_batch(n_steps, control_full_test, n_steps,
+    unused1, y_batch_test, unused2 = next_batch(len(control_full_test), control_full_test, n_steps,
                                                 previous_output)
-    plt.plot(range(0, n_steps), y_batch_test[0, :, 0], "go", markersize=10, label="instance_test")
-    plt.plot(range(0, n_steps), y_pred_test[0, :, 0], "m.", markersize=10, label="prediction_test")
+    y_pred_test_flat = [item for item in y_pred_test]
+
+    plt.plot(y_batch_test[0, :, 0], "go", markersize=10, label="instance_test")
+    plt.plot(y_pred_test[0, :, 0], "m.", markersize=10, label="prediction_test")
 
     plt.legend(loc="upper left")
     plt.xlabel("Time")
@@ -215,11 +195,11 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
             #     mse = loss.eval(feed_dict={X: X_batch, y: y_batch})
             #     print(iteration, "\tMSE:", mse)
 
-        saver.save(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown in the book
+        saver.save(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown in the book
 
     ###Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
     with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
+        saver.restore(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown
 
         X_new = X_batch
         y_pred = sess.run(outputs, feed_dict={X: X_new})
@@ -235,7 +215,7 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
 
     ###Testowanie na zbiorze nowym
     with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints/my_time_series_model" + title)  # not shown
+        saver.restore(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown
 
         X_new = X_batch_test
         y_pred_test = sess.run(outputs, feed_dict={X: X_new})
