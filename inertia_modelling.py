@@ -326,7 +326,7 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
     # save_fig(title)
     return mse_train_set, mse_test_set
 
-# BRAKUJE Z TEJ PRZERWANEJ SYMULACJI TO BRAKUJE TYLKO KONFIGURACJI 10, 50, 1000
+
 def perform_identification(control_full, full_experiment_length, control_full_test, title_addon='',
                            n_iterations_list=[20, 50], #[10, 20, 50],  # czyli ile razy przejeżdżam przez cały zbiór danych
                            # batch_size_list=[2, 25],  # , 100]
