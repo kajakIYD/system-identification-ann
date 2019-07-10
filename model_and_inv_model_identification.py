@@ -160,10 +160,10 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
 
         control_full_test = generate_test_signal(ploting=ploting)
 
-        inertia_modelling.perform_identification(control_full, len(control_full), control_full_test,
-                                                 title_addon="",
-                                                 ploting=ploting,
-                                                 training_signal_addon="inertia_modelling_checkpoints_MIXED_TRAINED")
+        # inertia_modelling.perform_identification(control_full, len(control_full), control_full_test,
+        #                                          title_addon="",
+        #                                          ploting=ploting,
+        #                                          training_signal_addon="inertia_modelling_checkpoints_MIXED_TRAINED")
     elif option == 'u_y_from_file':
 
         if len(input_file_list) == 0 and len(output_file_list) == 0:

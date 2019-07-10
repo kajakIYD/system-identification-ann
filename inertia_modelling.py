@@ -2,12 +2,15 @@ import tensorflow as tf
 from tensorflow.keras import models
 from tensorflow.keras import layers
 import keras
-
+from sklearn.metrics import mean_squared_error
 
 import math
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import pickle
+
+import model_and_inv_model_identification
 
 
 # to make this notebook's output stable across runs
@@ -69,36 +72,32 @@ def time_series(t):
     return t * np.sin(t) / 4 + 5 * np.sin(t*3)
 
 
-def next_batch(experiment_length, control_full, n_steps, previous_output=0): # bylo jeszcze batch_size ale z niego nie korzystam
-    # t0 = np.random.rand(batch_size, 1) * (t_max - t_min - n_steps * resolution)  # to produkuje macierz batch_size x n_steps, czyli ileś paczuszek po n_steps wartosci każda
-                                                                                 # czyli na przykład ładuje wektor sterowań (albo kilka paczuszek wektorów sterowań), a sieć
-                                                                                 # powinna wypluć wyjście (albo wektor wyjść jeżeli wrzucam kilka paczek)
-    # Ts = t0 + np.arange(0., n_steps + 1) * resolution
-    # ys_ = time_series(Ts)
-    #             # paczuszki z obcięttą jedną wartością na końcu | a tu paczuszki przesunięte względem początku sekwencji o 1 (czyli zaczynają się od indeksu 1 a nie od inddeksu 0)
-    # ys_1, ys_2 = ys_[:, :-1].reshape(-1, n_steps, 1), ys_[:, 1:].reshape(-1, n_steps, 1)
-    # # w szeregah czasowych szuka sie zaleznosci pomiedzy poprzednia a nastepna probka, to tak jakby szukac zaleznosci pomiezy poprzednim wyjsciem a nastepnym wyjsciem obiektu, a to bzdura, bo zalezy od sterowania i/albo od stanu
-
+def simulate_inertia_for_given_control(control_full, previous_output=0):
     y = []
-    for i in range(0, experiment_length): #było też n_steps + 1 ale to dla błędnej koncepcji :p
+    for i in range(0, len(control_full)):  # było też n_steps + 1 ale to dla błędnej koncepcji :p
         current_output = simulate_step(control_full[i], previous_output=previous_output)
         y.append(current_output)
         previous_output = current_output
+
+    return y
+
+
+def next_batch(control_full, n_steps, previous_output=0):
+    if not len(control_full) % n_steps == 0:
+        modulo = len(control_full) % n_steps
+        control_full = control_full[:-modulo]
+
+    y = simulate_inertia_for_given_control(control_full)
 
     ys = np.asarray([np.asarray(y)])
 
     control_X_batch = np.asarray([control_full]).reshape(-1, n_steps, 1)
     output_y_batch = ys.reshape(-1, n_steps, 1)
 
-    control_X_batch_flat = control_full
-    output_y_batch_flat = y
-
     return control_X_batch, output_y_batch, previous_output# ys1, ys2, previous_output
 
 
 def construct_rnn(n_steps, n_inputs, n_outputs, n_neurons):
-    # X_batch, y_batch = next_batch(1, n_steps)
-
     reset_graph()
 
     X = tf.placeholder(tf.float32, [None, n_steps, n_inputs])
@@ -125,137 +124,211 @@ def construct_rnn(n_steps, n_inputs, n_outputs, n_neurons):
     return init, training_op, X, y, outputs, loss
 
 
-def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title):
+def evaluate_model(saver, control_full, path_to_checkpoints, title, n_steps, outputs, X):
+    if not len(control_full) % n_steps == 0:
+        modulo = len(control_full) % n_steps
+        control_full = control_full[:-modulo]
+
+    model_input_vector = [0] * n_steps + control_full
+    model_output_vector = []
+
+
+    with tf.Session() as sess:
+        saver.restore(sess, path_to_checkpoints + "/my_time_series_model" + title)  # not shown
+        for control in control_full:
+            X_new_model = np.asarray(model_input_vector).reshape(-1, n_steps, 1)
+            y_pred_model = sess.run(outputs, feed_dict={X: X_new_model})
+            model_output_vector.append(y_pred_model[-1][-1])
+            model_input_vector = model_input_vector[1:]
+            model_input_vector.append(control)
+
+    return model_output_vector
+
+
+def evaluate_model_inverse(saver, control_full, path_to_checkpoints, title, n_steps, outputs, X):
+    if not len(control_full) % n_steps == 0:
+        modulo = len(control_full) % n_steps
+        control_full = control_full[:-modulo]
+
+    model_inverse_input_vector = simulate_inertia_for_given_control(control_full)
+
+    object_output_full = model_inverse_input_vector
+    model_inverse_output_vector = []
+
+    with tf.Session() as sess:
+        saver.restore(sess, path_to_checkpoints + "/my_time_series_model" + title)  # not shown
+        for object_output in object_output_full:
+            X_new_model = np.asarray(model_inverse_input_vector).reshape(-1, n_steps, 1)
+            y_pred_model = sess.run(outputs, feed_dict={X: X_new_model})
+            model_inverse_output_vector.append(y_pred_model[-1][-1])
+            model_inverse_input_vector = model_inverse_input_vector[1:]
+            model_inverse_input_vector.append(object_output)
+
+    return model_inverse_output_vector
+
+
+def run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
+                    control_full, control_full_test, title,
+                    output_full = [], output_full_test = [],
+                    option='inertia_modelling', ploting=False, training_signal_addon = '',
+                    path_to_checkpoints="./inertia_modelling_checkpoints_trying_to_reproduce"):
+
     with tf.Session() as sess:
         init.run()
         previous_output = 0
-        X_batch_full, y_batch_full, previous_output = next_batch(len(control_full), control_full, n_steps,
-                                                                 previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
+        X_batch_full, y_batch_full, previous_output = next_batch(control_full, n_steps,
+                                                                 previous_output)
         X_batch = X_batch_full
         y_batch = y_batch_full
         for iteration in range(n_iterations):
-            # for i in range(0, n_steps):
-            #     X_batch = np.asarray(X_batch_full[i])
-            #     y_batch = np.asarray(y_batch_full[i])
             sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
             # if iteration % 100 == 0:
             #     mse = loss.eval(feed_dict={X: X_batch, y: y_batch})
             #     print(iteration, "\tMSE:", mse)
 
-        saver.save(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model"  + title)  # not shown in the book
+        saver.save(sess, path_to_checkpoints + "/my_time_series_model" + title)  # not shown in the book
 
-    ###Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
-    with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown
-        X_new = X_batch
-        y_pred = sess.run(outputs, feed_dict={X: X_new})
+    # Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
+    model_output_vector = evaluate_model(saver, control_full, path_to_checkpoints, title, n_steps, outputs, X)
 
-    plt.title(title, fontsize=14)
-    plt.plot(range(0, n_steps), y_batch[0, :, 0], "bo", markersize=10, label="instance")
-    plt.plot(range(0, n_steps), y_pred[0, :, 0], "r.", markersize=10, label="prediction")
+    y_batch_flat = [item for sub_y_batch in y_batch for item in sub_y_batch]
+    mse_training_set = mean_squared_error(y_batch_flat, model_output_vector)
 
-    control_full_test = [2] * n_steps * 2 + [-2] * n_steps * 2
+    if ploting:
+        plt.title(title, fontsize=14)
+        plt.plot(y_batch_flat, "b-", markersize=10, label="instance")
+        plt.plot(model_output_vector, "r-", markersize=10, label="prediction")
+        plt.legend()
+        plt.grid()
+        plt.show()
+
+    control_full_test = model_and_inv_model_identification.generate_test_signal()
     previous_output = 0
 
-    ###Testowanie na zbiorze nowym
-    with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown
+    # Testowanie na zbiorze nowym
+    model_output_vector = evaluate_model(saver, control_full_test, path_to_checkpoints, title, n_steps, outputs, X)
 
-        X_new = np.asarray(control_full_test).reshape(-1, n_steps, 1)
-        y_pred_test = sess.run(outputs, feed_dict={X: X_new})
-
-    unused1, y_batch_test, unused2 = next_batch(len(control_full_test), control_full_test, n_steps,
+    unused1, y_batch_test, unused2 = next_batch(control_full_test, n_steps,
                                                 previous_output)
-    y_pred_test_flat = [item for item in y_pred_test]
+    y_batch_test_flat = [item for sub_y_batch in y_batch_test for item in sub_y_batch]
 
-    plt.plot(y_batch_test[0, :, 0], "go", markersize=10, label="instance_test")
-    plt.plot(y_pred_test[0, :, 0], "m.", markersize=10, label="prediction_test")
+    mse_test_set = mean_squared_error(y_batch_test_flat, model_output_vector)
 
-    plt.legend(loc="upper left")
-    plt.xlabel("Time")
+    if ploting:
+        plt.plot(y_batch_test_flat, "b-", markersize=10, label="instance_test")
+        plt.plot(model_output_vector, "r-", markersize=10, label="prediction_test")
+        plt.legend()
+        plt.grid()
+        plt.xlabel("Time")
+        # save_fig(title)
+        plt.show()
 
-    # save_fig(title)
-    plt.show()
+    return mse_training_set, mse_test_set
 
 
-def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title):
+def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps,
+                             control_full, control_full_test, title,
+                             output_full=[], output_full_test=[],
+                             option='inertia_modelling', ploting=False,
+                             training_signal_addon='',
+                             path_to_checkpoints="./inertia_modelling_checkpoints_trying_to_reproduce"):
     with tf.Session() as sess:
         init.run()
         previous_output = 0
-        y_batch_full, X_batch_full, previous_output = next_batch(n_steps, control_full, n_steps,
-                                                                 previous_output)  # bylo jeszcze batch_size ale z tego nie korzystam
-        X_batch = X_batch_full
-        y_batch = y_batch_full
+        X_batch_full, y_batch_full, previous_output = next_batch(control_full, n_steps,
+                                                                 previous_output)
         for iteration in range(n_iterations):
-            # for i in range(0, n_steps):
-            #     X_batch = np.asarray(X_batch_full[i])
-            #     y_batch = np.asarray(y_batch_full[i])
-            sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
+            sess.run(training_op, feed_dict={X: y_batch_full, y: X_batch_full})
             # if iteration % 100 == 0:
             #     mse = loss.eval(feed_dict={X: X_batch, y: y_batch})
             #     print(iteration, "\tMSE:", mse)
 
         saver.save(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown in the book
 
-    ###Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
-    with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown
+    # Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
+    model_inverse_output_vector = evaluate_model_inverse(saver, control_full, path_to_checkpoints, title, n_steps,
+                                                         outputs, X)
 
-        X_new = X_batch
-        y_pred = sess.run(outputs, feed_dict={X: X_new})
+    mse_training_set = mean_squared_error(model_inverse_output_vector, control_full)
 
-    plt.title(title, fontsize=14)
-    plt.plot(range(0, n_steps), y_batch[0, :, 0], "bo", markersize=10, label="instance")
-    plt.plot(range(0, n_steps), y_pred[0, :, 0], "r.", markersize=10, label="prediction")
+    if ploting:
+        plt.title(title, fontsize=14)
+        plt.plot(control_full, "b-", markersize=10, label="instance")
+        plt.plot(model_inverse_output_vector, "r-", markersize=10, label="prediction")
+        plt.show()
 
-    control_full_test = [2] * n_steps
-    previous_output = 0
-    y_batch_test, X_batch_test, unused2 = next_batch(n_steps, control_full_test, n_steps,
-                                                                 previous_output)
+    # Testowanie na zbiorze nowym
+    model_inverse_output_vector = evaluate_model_inverse(saver, control_full_test, path_to_checkpoints, title, n_steps,
+                                                         outputs, X)
 
-    ###Testowanie na zbiorze nowym
-    with tf.Session() as sess:  # not shown in the book
-        saver.restore(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown
+    modulo = len(control_full_test) % n_steps
+    if not modulo == 0:
+        mse_test_set = mean_squared_error(control_full_test[:-modulo], model_inverse_output_vector)
+    else:
+        mse_test_set = mean_squared_error(control_full_test, model_inverse_output_vector)
 
-        X_new = X_batch_test
-        y_pred_test = sess.run(outputs, feed_dict={X: X_new})
+    if ploting:
+        plt.plot(control_full_test[:-modulo], "b-", markersize=10, label="instance_test")
+        plt.plot(model_inverse_output_vector, "r-", markersize=10, label="prediction_test")
+        plt.xlabel("Time")
+        # save_fig(title)
+        plt.show()
 
-    plt.plot(range(0, n_steps), y_batch_test[0, :, 0], "go", markersize=10, label="instance_test")
-    plt.plot(range(0, n_steps), y_pred_test[0, :, 0], "m.", markersize=10, label="prediction_test")
-
-    plt.legend(loc="upper left")
-    plt.xlabel("Time")
-
-    # save_fig(title)
-    plt.show()
+    return mse_training_set, mse_test_set
 
 
-def main():
-    t_min, t_max = 0, 300
-    resolution = 0.1
-
-    t = np.linspace(t_min, t_max, int((t_max - t_min) / resolution))
-
+def perform_identification(control_full, control_full_test, output_full, ploting=False,
+                           n_iterations_list=[10, 20, 50],
+                           n_neurons_list=[50, 200, 500, 1000],  # [1, 10, 100]
+                           n_steps_list=[10, 20, 50]):
     n_inputs = 1
     n_outputs = 1
 
-    n_iterations_list = [20, 50, 250]  # [100, 500, 1000, 1500, 2000] # czyli ile razy przejeżdżam przez cały zbiór danych
-    batch_size_list = [2, 25]  # , 100] # [1, 5, 10, 25, 50, 100] # czyli ile poprzednich sterowań biorę pod uwagę
-    n_neurons_list = [200, 500, 1000]  # [1, 10, 100]
-    n_steps_list = [20, 50, 250]  # , 500]  # [1, 5, 20, 50]
+    all_models_counter = len(n_iterations_list) * len(n_steps_list) * len(n_neurons_list)
+    models_counter = 1
+    model_performance = []
 
-    full_experiment_length = 200
+    training_signal_addon = "_trying_to_reproduce_RECTANGLE_"
+    title_addon = "_trying_to_reproduce_RECTANGLE_"
 
     for n_iterations in n_iterations_list:
-    #    for batch_size in batch_size_list:  # poki co nie korzystam z batch size!!!
         for n_steps in n_steps_list:
             for n_neurons in n_neurons_list:
-                # t_instance = np.linspace(12.2, 12.2 + resolution * (n_steps + 1), n_steps + 1)
-                control_full = [1] * int(full_experiment_length)  # + [2] * int(n_steps/2)
-                control_instance = control_full[:n_steps]
-
 
                 title = "n_iterations_" + str(n_iterations) + " n_steps_" + str(
+                    n_steps) + " n_neurons_" + str(n_neurons)
+
+                init, training_op, X, y, outputs, loss = construct_rnn(n_steps, n_inputs, n_outputs, n_neurons)
+
+                saver = tf.train.Saver()
+
+                print(title)
+                mse_training_set, mse_test_set = run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver,
+                                                                  n_iterations, n_steps, control_full, control_full_test,
+                                                                  title, ploting=ploting)
+
+                model_performance.append(
+                    {
+                        'mse_test_set': mse_test_set, 'mse_training_set': mse_training_set,
+                        'n_steps': n_steps, 'n_neurons': n_neurons, 'n_iterations': n_iterations,
+                        'title': title,
+                        'identification_option': "", 'training_signal_addon': training_signal_addon
+                    })
+                print("Model " + str(models_counter) + " of " + str(all_models_counter) + " DONE")
+                models_counter = models_counter + 1
+
+                with open(r"model_and_inv_model_identification_mses/model_performance" + title_addon + ".pickle",
+                          "wb") as output_file:
+                    pickle.dump(model_performance, output_file)
+
+    models_counter = 1
+
+    model_inverse_performance = []
+    # Inverse modelling
+    for n_iterations in n_iterations_list:
+        for n_steps in n_steps_list:
+            for n_neurons in n_neurons_list:
+                title = "INVERSE_n_iterations_" + str(n_iterations) + " n_steps_" + str(
                     n_steps) + " n_neurons_" + str(n_neurons)  #  + " batch_size_" + str(batch_size) # poki co nie korzystam z batch size
                 # plot_training_instance()
 
@@ -263,27 +336,27 @@ def main():
 
                 saver = tf.train.Saver()
 
-                run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title)
+                mse_training_set, mse_test_set = run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver,
+                                                                          n_iterations, n_steps, control_full,
+                                                                          control_full_test, title, ploting=ploting)
+                print(title)
+                model_inverse_performance.append(
+                    {
+                        'mse_training_set': mse_training_set, 'mse_test_set': mse_test_set,
+                        'n_steps': n_steps, 'n_neurons': n_neurons, 'n_iterations': n_iterations,
+                        'title': title,
+                        'identification_option': "", 'training_signal_addon': training_signal_addon
+                    })
+                print("Model inverse" + str(models_counter) + " of " + str(all_models_counter) + " DONE")
+                models_counter = models_counter + 1
 
-    ##Inversse modelling
-    for n_iterations in n_iterations_list:
-    #    for batch_size in batch_size_list:  # poki co nie korzystam z batch size!!!
-        for n_steps in n_steps_list:
-            for n_neurons in n_neurons_list:
-                # t_instance = np.linspace(12.2, 12.2 + resolution * (n_steps + 1), n_steps + 1)
-                control_full = [1] * int(n_steps)  # + [2] * int(n_steps/2)
-                control_instance = control_full[:n_steps]
-
-                title = "INVERSE_n_iterations_" + str(n_iterations) + " n_steps_" + str(
-                    n_steps) + " n_neurons_" + str(n_neurons)  #  + " batch_size_" + str(batch_size) # poki co nie korzystam z batch size
-                # plot_training_instance()
-
-                init, training_op, X, y, outputs, loss = construct_rnn((n_steps, n_inputs, n_outputs, n_neurons))
-
-                saver = tf.train.Saver()
-
-                run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_iterations, n_steps, control_full, title)
+                with open(r"model_and_inv_model_identification_mses/model_inverse_performance" + title_addon + ".pickle",
+                          "wb") as output_file:
+                    pickle.dump(model_inverse_performance, output_file)
 
 
 if __name__ == "__main__":
-    main()
+    control_full = model_and_inv_model_identification.generate_identification_signal_1()
+    control_full_test = model_and_inv_model_identification.generate_test_signal()
+    output_full = simulate_inertia_for_given_control(control_full)
+    perform_identification(control_full, control_full_test, output_full, ploting=False)
