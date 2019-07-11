@@ -280,7 +280,11 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
 def perform_identification(control_full, control_full_test, output_full, ploting=False,
                            n_iterations_list=[10, 20, 50],
                            n_neurons_list=[50, 200, 500, 1000],  # [1, 10, 100]
-                           n_steps_list=[10, 20, 50]):
+                           n_steps_list=[10, 20, 50],
+                           training_signal_addon="_trying_to_reproduce_MIXED_TRAINED",
+                           title_addon="_trying_to_reproduce_MIXED_TRAINED",
+                           path_to_checkpoints="./inertia_modelling_checkpoints_trying_to_"
+                                               "reproduce_MIXED_TRAINED"):
     n_inputs = 1
     n_outputs = 1
 
@@ -288,8 +292,7 @@ def perform_identification(control_full, control_full_test, output_full, ploting
     models_counter = 1
     model_performance = []
 
-    training_signal_addon = "_trying_to_reproduce_RECTANGLE_"
-    title_addon = "_trying_to_reproduce_RECTANGLE_"
+
 
     for n_iterations in n_iterations_list:
         for n_steps in n_steps_list:
@@ -305,7 +308,8 @@ def perform_identification(control_full, control_full_test, output_full, ploting
                 print(title)
                 mse_training_set, mse_test_set = run_and_plot_rnn(init, training_op, X, y, outputs, loss, saver,
                                                                   n_iterations, n_steps, control_full, control_full_test,
-                                                                  title, ploting=ploting)
+                                                                  title, ploting=ploting,
+                                                                  path_to_checkpoints=path_to_checkpoints)
 
                 model_performance.append(
                     {
@@ -338,7 +342,8 @@ def perform_identification(control_full, control_full_test, output_full, ploting
 
                 mse_training_set, mse_test_set = run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver,
                                                                           n_iterations, n_steps, control_full,
-                                                                          control_full_test, title, ploting=ploting)
+                                                                          control_full_test, title, ploting=ploting,
+                                                                          path_to_checkpoints=path_to_checkpoints)
                 print(title)
                 model_inverse_performance.append(
                     {
