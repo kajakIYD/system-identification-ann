@@ -154,16 +154,21 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
         # inertia_modelling.perform_identification(control_full, len(control_full), control_full_test,
         #                                          title_addon="",
         #                                          ploting=ploting,
-        #                                          training_signal_addon="inertia_modelling_checkpoints_RECTANGLE_A2_P80_dt1_1200probes_TRAINED")
+        #                                          training_signal_addon="inertia_modelling_checkpoints_RECTANGLE_A2_
+        #                                                                "P80_dt1_1200probes_TRAINED",
+        #                                          path_to_checkpoints = "./inertia_modelling_checkpoints_trying_to_"
+        #                                          "reproduce")
 
         control_full = generate_identification_signal_2(ploting=ploting)
 
         control_full_test = generate_test_signal(ploting=ploting)
 
-        # inertia_modelling.perform_identification(control_full, len(control_full), control_full_test,
-        #                                          title_addon="",
-        #                                          ploting=ploting,
-        #                                          training_signal_addon="inertia_modelling_checkpoints_MIXED_TRAINED")
+        inertia_modelling.perform_identification(control_full, len(control_full), control_full_test,
+                                                 title_addon="_trying_to_reproduce_MIXED_",
+                                                 ploting=ploting,
+                                                 training_signal_addon="_trying_to_reproduce_MIXED_",
+                                                 path_to_checkpoints="./inertia_modelling_checkpoints_trying_to_"
+                                                                     "reproduce_MIXED_TRAINED")
     elif option == 'u_y_from_file':
 
         if len(input_file_list) == 0 and len(output_file_list) == 0:
@@ -197,4 +202,4 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
 
 
 if __name__ == "__main__":
-    main(option='inertia_modelling', ploting=True)
+    main(option='inertia_modelling', ploting=False)
