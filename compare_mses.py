@@ -158,24 +158,17 @@ def analyze_identification_mses_and_run_simulations(suspension_simulation=False)
     # simulate_single_simulation(sorted_simulation_performances[-100])
 
 
-def analyze_simulation_mses_and_run_simulations(suspension_simulation=False, path_to_mses='.', sort_by='mse'):
-    # simulation_performances = extract_simulation_performances(directory_in_str="./active_suspension_simulation_performances")
-    simulation_performances = extract_identification_performances_all(path_to_mses)
+def analyze_simulation_mses_and_run_simulations(suspension_simulation=False, path_to_mses_all='.', directory_to_mses='',
+                                                sort_by='mse'):
+    simulation_performances = extract_simulation_performances(directory_in_str=directory_to_mses)
+    # simulation_performances = extract_identification_performances_all(path_to_mses_all)
 
     mses_vals = []
 
     simulation_performances_flat = []
+    sorted_simulation_performances = sort_performanes_by(simulation_performances, sort_by)
 
-    for item in simulation_performances:
-        if len(item) > 0:
-            mses_vals.append(item[sort_by])
-            simulation_performances_flat.append(item)
-
-    sorted_simulation_performances = sorted(simulation_performances_flat, key=lambda k: k[sort_by])
-
-    min_mse_index = mses_vals.index(min(mses_vals))
-
-    best_simulation = simulation_performances_flat[min_mse_index]
+    best_simulation = sorted_simulation_performances[0]
 
     print(best_simulation)
 
@@ -199,10 +192,8 @@ def analyze_simulation_mses_and_run_simulations(suspension_simulation=False, pat
 def main():
     # analyze_identification_mses_and_run_simulations(suspension_simulation=False)
     analyze_simulation_mses_and_run_simulations(suspension_simulation=False,
-                                                path_to_mses='inertia_simulation_performances_disturbed_' +
-                                                             'RECTANGLE_A2_P80_dt1_1200probes_TRAINED/' +
-                                                             'mses_all_inertia_RECTANGLE_A2_P80_dt1_1200' +
-                                                             'probes_TRAINED.pkl',
+                                                directory_to_mses='./inertia_simulation_performances_disturbed_'
+                                                                  'trying_to_RECTANGLE_TRAINED',
                                                 sort_by='ise')
     # compare_best_identification_vs_best_simulation_performance('sorted_modelling_performances.pkl',
     #                                                            './inertia_simulation_performances/mses_3600.pkl')

@@ -387,11 +387,11 @@ if __name__ == "__main__":
     #      path_to_save_mses='/home/user/Documents/system-identification-ann/active_suspension_simulation_performances/')
 
     titles_model_inverse_data, titles_model_data = extract_models_and_inverse_models_data\
-                                                    ("./inertia_modelling_checkpoints_RECTANGLE_A2_P80_dt1_1200probes_TRAINED")
+                                                    ("./inertia_modelling_checkpoints_trying_to_reproduce")
 
     main(titles_model_inverse_data, titles_model_data, dt=0.01, simulation_time=10,
          SP=model_and_inv_model_identification.generate_rectangle(10, 1, 2, dt=0.01), suspension_simulation=False,
          plotting=False,
-         path_to_save_mses='./inertia_simulation_performances_disturbed_RECTANGLE_A2_P80_dt1_1200probes_TRAINED/',
-         mses_pickle_name='inertia_RECTANGLE_A2_P80_dt1_1200probes_TRAINED',
+         path_to_save_mses='./inertia_simulation_performances_disturbed_trying_to_RECTANGLE_TRAINED/',
+         mses_pickle_name='inertia_trying_to_repr_RECTANGLE_TRAINED',
          apply_disturbances=True)
