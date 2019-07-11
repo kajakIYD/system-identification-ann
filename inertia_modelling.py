@@ -292,8 +292,6 @@ def perform_identification(control_full, experiment_length, control_full_test, o
     models_counter = 1
     model_performance = []
 
-
-
     for n_iterations in n_iterations_list:
         for n_steps in n_steps_list:
             for n_neurons in n_neurons_list:
