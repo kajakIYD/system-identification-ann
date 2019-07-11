@@ -243,7 +243,7 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
             #     mse = loss.eval(feed_dict={X: X_batch, y: y_batch})
             #     print(iteration, "\tMSE:", mse)
 
-        saver.save(sess, "./inertia_modelling_checkpoints_trying_to_reproduce/my_time_series_model" + title)  # not shown in the book
+        saver.save(sess, path_to_checkpoints + "/my_time_series_model" + title)  # not shown in the book
 
     # Testowanie na zbiorze już widzianym (w zasadzie na zbiorze uczącym)
     model_inverse_output_vector = evaluate_model_inverse(saver, control_full, path_to_checkpoints, title, n_steps,
@@ -277,7 +277,7 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
     return mse_training_set, mse_test_set
 
 
-def perform_identification(control_full, control_full_test, output_full, ploting=False,
+def perform_identification(control_full, experiment_length, control_full_test, output_full=[], ploting=False,
                            n_iterations_list=[10, 20, 50],
                            n_neurons_list=[50, 200, 500, 1000],  # [1, 10, 100]
                            n_steps_list=[10, 20, 50],
@@ -352,7 +352,7 @@ def perform_identification(control_full, control_full_test, output_full, ploting
                         'title': title,
                         'identification_option': "", 'training_signal_addon': training_signal_addon
                     })
-                print("Model inverse" + str(models_counter) + " of " + str(all_models_counter) + " DONE")
+                print("Model inverse " + str(models_counter) + " of " + str(all_models_counter) + " DONE")
                 models_counter = models_counter + 1
 
                 with open(r"model_and_inv_model_identification_mses/model_inverse_performance" + title_addon + ".pickle",
