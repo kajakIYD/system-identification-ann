@@ -278,7 +278,7 @@ def run_and_plot_rnn_inverse(init, training_op, X, y, outputs, loss, saver, n_it
 
 
 def perform_identification(control_full, experiment_length, control_full_test, output_full=[], ploting=False,
-                           n_iterations_list=[10, 20, 50],
+                           n_iterations_list=[10, 20, 50, 100, 250, 500],
                            n_neurons_list=[50, 200, 500, 1000],  # [1, 10, 100]
                            n_steps_list=[10, 20, 50],
                            training_signal_addon="_trying_to_reproduce_MIXED_TRAINED",

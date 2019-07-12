@@ -147,17 +147,16 @@ def main(option='u_y_from_file', input_file_list=[], output_file_list=[], title_
          ploting=False):
 
     if option == 'inertia_modelling':
-        # control_full = generate_identification_signal_1(ploting=ploting)
-        #
-        # control_full_test = generate_test_signal(ploting=ploting)
-        #
-        # inertia_modelling.perform_identification(control_full, len(control_full), control_full_test,
-        #                                          title_addon="",
-        #                                          ploting=ploting,
-        #                                          training_signal_addon="inertia_modelling_checkpoints_RECTANGLE_A2_
-        #                                                                "P80_dt1_1200probes_TRAINED",
-        #                                          path_to_checkpoints = "./inertia_modelling_checkpoints_trying_to_"
-        #                                          "reproduce")
+        control_full = generate_identification_signal_1(ploting=ploting)
+
+        control_full_test = generate_test_signal(ploting=ploting)
+
+        inertia_modelling.perform_identification(control_full, len(control_full), control_full_test,
+                                                 title_addon="_trying_to_reproduce_RECTANGLE_",
+                                                 ploting=ploting,
+                                                 training_signal_addon="_trying_to_reproduce_RECTANGLE_",
+                                                 path_to_checkpoints = "./inertia_modelling_checkpoints_trying_to_"
+                                                 "reproduce_RECTANGLE")
 
         control_full = generate_identification_signal_2(ploting=ploting)
 
