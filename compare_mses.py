@@ -192,9 +192,9 @@ def analyze_simulation_mses_and_run_simulations(suspension_simulation=False, pat
 def main():
     # analyze_identification_mses_and_run_simulations(suspension_simulation=False)
     analyze_simulation_mses_and_run_simulations(suspension_simulation=False,
-                                                directory_to_mses='./inertia_simulation_performances_disturbed_'
-                                                                  'trying_to_RECTANGLE_TRAINED',
-                                                sort_by='ise')
+                                                directory_to_mses='./inertia_simulation_performances_disturbed'
+                                                                  '_trying_to_MIXED_TRAINED',
+                                                sort_by='itae')
     # compare_best_identification_vs_best_simulation_performance('sorted_modelling_performances.pkl',
     #                                                            './inertia_simulation_performances/mses_3600.pkl')
 
