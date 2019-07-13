@@ -160,8 +160,10 @@ def analyze_identification_mses_and_run_simulations(suspension_simulation=False)
 
 def analyze_simulation_mses_and_run_simulations(suspension_simulation=False, path_to_mses_all='.', directory_to_mses='',
                                                 sort_by='mse'):
-    simulation_performances = extract_simulation_performances(directory_in_str=directory_to_mses)
-    # simulation_performances = extract_identification_performances_all(path_to_mses_all)
+    if path_to_mses_all == '.':
+        simulation_performances = extract_simulation_performances(directory_in_str=directory_to_mses)
+    else:
+        simulation_performances = extract_identification_performances_all(path_to_mses_all)
 
     mses_vals = []
 
@@ -192,9 +194,9 @@ def analyze_simulation_mses_and_run_simulations(suspension_simulation=False, pat
 def main():
     # analyze_identification_mses_and_run_simulations(suspension_simulation=False)
     analyze_simulation_mses_and_run_simulations(suspension_simulation=False,
-                                                directory_to_mses='./inertia_simulation_performances_disturbed'
-                                                                  '_trying_to_MIXED_TRAINED',
-                                                sort_by='itae')
+                                                directory_to_mses='./inertia_simulation_performances_disturbed_'
+                                                                  'MIXED_TRAINED',
+                                                sort_by='ise')
     # compare_best_identification_vs_best_simulation_performance('sorted_modelling_performances.pkl',
     #                                                            './inertia_simulation_performances/mses_3600.pkl')
 
