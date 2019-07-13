@@ -63,13 +63,12 @@ def plot_identification_model(identification_signal, title_model_data, checkpoin
     return output_prediction_flat, reference_output
 
 
-def plot_mse_vs_n_neurons(performances_sorted):
+def plot_mse_vs_n_neurons(performances_sorted, trying_to_reproduce_mode=False,
+                          n_iterations_list=[10, 20, 50],
+                          n_steps_list=[10, 20, 30, 50],
+                          n_neurons_list=[50, 200, 500, 1000]):
     performances_mse_train_to_plot = dict()
     performances_mse_test_to_plot = dict()
-
-    n_iterations_list = [10, 20, 50]
-    n_steps_list = [10, 20, 30, 50]
-    n_neurons_list = [50, 200, 500, 1000]
 
     for n_steps in n_steps_list:
         for n_iterations in n_iterations_list:
@@ -87,15 +86,18 @@ def plot_mse_vs_n_neurons(performances_sorted):
         performances_mse_test_to_plot['n_steps_' + str(n_steps) +
                                       '_n_iterations_' + str(n_iterations)].append((item['mse_test_set'], n_neurons))
 
-    for n_steps in [10, 50]:
-        for n_iterations in [10, 50]:
+    n_steps_edge = [n_steps_list[0], n_steps_list[-1]]
+    n_iterations_edge = [n_iterations_list[0], n_iterations_list[-1]]
+
+    for n_steps in n_steps_edge:
+        for n_iterations in n_iterations_edge:
             mse = [item[0] for item in performances_mse_train_to_plot['n_steps_' + str(n_steps) +
                                                                       '_n_iterations_' + str(n_iterations)]]
             n_neurons_list_to_plot = [item[1] for item in performances_mse_train_to_plot['n_steps_' + str(n_steps) +
                                                                       '_n_iterations_' + str(n_iterations)]]
             plt.plot(n_neurons_list_to_plot, mse, '.', label='n_steps= ' + str(n_steps) + ' n_iterations=' + str(n_iterations))
 
-    plt.xticks([50, 200, 500, 1000])
+    plt.xticks(n_neurons_list)
     plt.yticks(list(plt.yticks()[0]) + [0])
     plt.xlabel('n_neurons')
     plt.ylabel('MSE')
@@ -103,15 +105,15 @@ def plot_mse_vs_n_neurons(performances_sorted):
     plt.title('MSE_train vs n_neurons')
     plt.show()
 
-    for n_steps in [10, 50]:
-        for n_iterations in [10, 50]:
+    for n_steps in n_steps_edge:
+        for n_iterations in n_iterations_edge:
             mse = [item[0] for item in performances_mse_test_to_plot['n_steps_' + str(n_steps) +
                                                                       '_n_iterations_' + str(n_iterations)]]
             n_neurons_list_to_plot = [item[1] for item in performances_mse_test_to_plot['n_steps_' + str(n_steps) +
                                                                       '_n_iterations_' + str(n_iterations)]]
             plt.plot(n_neurons_list_to_plot, mse, '.', label='n_steps= ' + str(n_steps) + ' n_iterations=' + str(n_iterations))
 
-    plt.xticks([50, 200, 500, 1000])
+    plt.xticks(n_neurons_list)
     plt.yticks(list(plt.yticks()[0]) + [0])
     plt.xlabel('n_neurons')
     plt.ylabel('MSE')
@@ -120,13 +122,12 @@ def plot_mse_vs_n_neurons(performances_sorted):
     plt.show()
 
 
-def plot_mse_vs_n_steps(performances_sorted, title='mse vs n_steps'):
+def plot_mse_vs_n_steps(performances_sorted, title='mse vs n_steps',
+                        n_iterations_list=[10, 20, 50],
+                        n_steps_list=[10, 20, 30, 50],
+                        n_neurons_list=[50, 200, 500, 1000]):
     performances_mse_train_to_plot = dict()
     performances_mse_test_to_plot = dict()
-
-    n_iterations_list = [10, 20, 50]
-    n_steps_list = [10, 20, 30, 50]
-    n_neurons_list = [50, 200, 500, 1000]
 
     for n_neurons in n_neurons_list:
         for n_iterations in n_iterations_list:
@@ -144,8 +145,10 @@ def plot_mse_vs_n_steps(performances_sorted, title='mse vs n_steps'):
         performances_mse_test_to_plot['n_neurons_' + str(n_neurons) +
                                       '_n_iterations_' + str(n_iterations)].append((item['mse_test_set'], n_steps))
 
-    for n_neurons in [50, 1000]:
-        for n_iterations in [10, 50]:
+    n_neurons_edge = [n_neurons_list[0], n_neurons_list[-1]]
+    n_iterations_edge = [n_iterations_list[0], n_iterations_list[-1]]
+    for n_neurons in n_neurons_edge:
+        for n_iterations in n_iterations_edge:
             mse = [item[0] for item in performances_mse_train_to_plot['n_neurons_' + str(n_neurons) +
                                                                       '_n_iterations_' + str(n_iterations)]]
             n_neurons_list_to_plot = [item[1] for item in performances_mse_train_to_plot['n_neurons_' + str(n_neurons) +
@@ -154,7 +157,7 @@ def plot_mse_vs_n_steps(performances_sorted, title='mse vs n_steps'):
             plt.plot(n_neurons_list_to_plot, mse, '.',
                      label='n_neurons= ' + str(n_neurons) + ' n_iterations=' + str(n_iterations))
 
-    plt.xticks([10, 20, 30, 50])
+    plt.xticks(n_steps_list)
     plt.yticks(list(plt.yticks()[0]) + [0])
     plt.xlabel('n_steps')
     plt.ylabel('MSE')
@@ -162,8 +165,8 @@ def plot_mse_vs_n_steps(performances_sorted, title='mse vs n_steps'):
     plt.title('MSE_train vs n_steps')
     plt.show()
 
-    for n_neurons in [50, 1000]:
-        for n_iterations in [10, 50]:
+    for n_neurons in n_neurons_edge:
+        for n_iterations in n_iterations_edge:
             mse = [item[0] for item in performances_mse_test_to_plot['n_neurons_' + str(n_neurons) +
                                                                      '_n_iterations_' + str(n_iterations)]]
             n_neurons_list_to_plot = [item[1] for item in performances_mse_test_to_plot['n_neurons_' + str(n_neurons) +
@@ -171,7 +174,7 @@ def plot_mse_vs_n_steps(performances_sorted, title='mse vs n_steps'):
             plt.plot(n_neurons_list_to_plot, mse, '.',
                      label='n_neurons= ' + str(n_neurons) + ' n_iterations=' + str(n_iterations))
 
-    plt.xticks([10, 20, 30, 50])
+    plt.xticks(n_steps_list)
     plt.yticks(list(plt.yticks()[0]) + [0])
     plt.xlabel('n_steps')
     plt.ylabel('MSE')
@@ -180,13 +183,12 @@ def plot_mse_vs_n_steps(performances_sorted, title='mse vs n_steps'):
     plt.show()
 
 
-def plot_mse_vs_n_iterations(performances_sorted, title='mse vs n_iterations'):
+def plot_mse_vs_n_iterations(performances_sorted, title='mse vs n_iterations',
+                             n_iterations_list=[10, 20, 50],
+                             n_steps_list=[10, 20, 30, 50],
+                             n_neurons_list=[50, 200, 500, 1000]):
     performances_mse_train_to_plot = dict()
     performances_mse_test_to_plot = dict()
-
-    n_iterations_list = [10, 20, 50]
-    n_steps_list = [10, 20, 30, 50]
-    n_neurons_list = [50, 200, 500, 1000]
 
     for n_neurons in n_neurons_list:
         for n_steps in n_steps_list:
@@ -204,8 +206,11 @@ def plot_mse_vs_n_iterations(performances_sorted, title='mse vs n_iterations'):
         performances_mse_test_to_plot['n_neurons_' + str(n_neurons) +
                                       '_n_steps_' + str(n_steps)].append((item['mse_test_set'], n_iterations))
 
-    for n_neurons in [50, 1000]:
-        for n_steps in [10, 50]:
+    n_steps_edge = [n_steps_list[0], n_steps_list[-1]]
+    n_neurons_edge = [n_neurons_list[0], n_neurons_list[-1]]
+
+    for n_neurons in n_neurons_edge:
+        for n_steps in n_steps_edge:
             mse = [item[0] for item in performances_mse_train_to_plot['n_neurons_' + str(n_neurons) +
                                                                       '_n_steps_' + str(n_steps)]]
             n_iterations_list_to_plot = [item[1] for item in performances_mse_train_to_plot['n_neurons_' + str(n_neurons) +
@@ -213,7 +218,7 @@ def plot_mse_vs_n_iterations(performances_sorted, title='mse vs n_iterations'):
             plt.plot(n_iterations_list_to_plot , mse, '.',
                      label='n_neurons= ' + str(n_neurons) + ' n_steps=' + str(n_steps))
 
-    plt.xticks([10, 20, 50])
+    plt.xticks(n_iterations_list)
     plt.yticks(list(plt.yticks()[0]) + [0])
     plt.xlabel('n_iterations')
     plt.ylabel('MSE')
@@ -221,8 +226,8 @@ def plot_mse_vs_n_iterations(performances_sorted, title='mse vs n_iterations'):
     plt.title('MSE_train vs n_iterations')
     plt.show()
 
-    for n_neurons in [50, 1000]:
-        for n_steps in [10, 50]:
+    for n_neurons in n_neurons_edge:
+        for n_steps in n_steps_edge:
             mse = [item[0] for item in performances_mse_test_to_plot['n_neurons_' + str(n_neurons) +
                                                                      '_n_steps_' + str(n_steps)]]
             n_neurons_list_to_plot = [item[1] for item in performances_mse_test_to_plot['n_neurons_' + str(n_neurons) +
@@ -230,7 +235,7 @@ def plot_mse_vs_n_iterations(performances_sorted, title='mse vs n_iterations'):
             plt.plot(n_neurons_list_to_plot, mse, '.',
                      label='n_neurons= ' + str(n_neurons) + ' n_steps=' + str(n_steps))
 
-    plt.xticks([10, 20, 50])
+    plt.xticks(n_iterations_list)
     plt.xlabel('n_iterations')
     plt.yticks(list(plt.yticks()[0]) + [0])
     plt.ylabel('MSE')
@@ -283,7 +288,7 @@ def plot_identification_model_inverse(identification_signal, title_model_inverse
     return input_prediction, identification_signal
 
 
-def best_mse_test_model_ploting(model_performances_sorted, inverse_model_mode=False,
+def best_mse_test_model_ploting(model_performances_sorted, inverse_model_mode=False, training_signal_type=1,
                                 checkpoint_folder='./inertia_modelling_checkpoints_RECTANGLE_A2_P80_dt1_1200probes_TRAINED/'):
     performance_number = 0
     n_neurons, n_steps, n_iterations = simulation.extract_rnn_structure_from_title(
@@ -292,7 +297,11 @@ def best_mse_test_model_ploting(model_performances_sorted, inverse_model_mode=Fa
     title_model_data = {'title': model_performances_sorted[performance_number]['title'],
                         'n_neurons': n_neurons, 'n_steps': n_steps, 'n_iterations': n_iterations}
 
-    control_full = mdl.generate_identification_signal_2()
+    if training_signal_type == 1:
+        control_full = mdl.generate_identification_signal_1()
+    else:
+        control_full = mdl.generate_identification_signal_2()
+
     control_full_test = mdl.generate_test_signal()
 
     if not inverse_model_mode:
@@ -327,7 +336,7 @@ def best_mse_test_model_ploting(model_performances_sorted, inverse_model_mode=Fa
         return R2_best_mse_test_train_fit, R2_best_mse_test_test_fit
 
 
-def best_mse_train_model_ploting(model_performances_sorted, inverse_model_mode=False,
+def best_mse_train_model_ploting(model_performances_sorted, inverse_model_mode=False, training_signal_type=1,
                                  checkpoint_folder='./inertia_modelling_checkpoints_RECTANGLE_A2_P80_dt1_1200probes_TRAINED/'):
     performance_number = 1
     n_neurons, n_steps, n_iterations = simulation.extract_rnn_structure_from_title(
@@ -336,7 +345,11 @@ def best_mse_train_model_ploting(model_performances_sorted, inverse_model_mode=F
     title_model_data = {'title': model_performances_sorted[performance_number]['title'],
                         'n_neurons': n_neurons, 'n_steps': n_steps, 'n_iterations': n_iterations}
 
-    control_full = mdl.generate_identification_signal_2()
+    if training_signal_type == 1:
+        control_full = mdl.generate_identification_signal_1()
+    else:
+        control_full = mdl.generate_identification_signal_2()
+
     control_full_test = mdl.generate_test_signal()
     if not inverse_model_mode:
         output_prediction_flat, reference_output = plot_identification_model(control_full, title_model_data=title_model_data,
@@ -400,7 +413,7 @@ def main():
     #     model_performances.append(item)
 
     unpickled_object = compare_mses.unpickle_object(
-        "./model_and_inv_model_identification_mses/model_performance_trying_to_reproduce_RECTANGLE_.pickle")
+        "./model_and_inv_model_identification_mses/model_performance_trying_to_reproduce_MIXED_.pickle")
 
     model_performances = []
     for item in unpickled_object:
@@ -410,15 +423,29 @@ def main():
         except:
             model_performances.append(item)
 
-    plot_mse_vs_n_iterations(model_performances)
-    plot_mse_vs_n_neurons(model_performances)
-    plot_mse_vs_n_steps(model_performances)
+    trying_to_reproduce_mode = True
+    if not trying_to_reproduce_mode:
+        n_iterations_list = [10, 20, 50]
+        n_steps_list = [10, 20, 30, 50]
+        n_neurons_list = [50, 200, 500, 1000]
+    else:
+        n_iterations_list = [10, 20, 50, 100, 250, 500]
+        n_neurons_list = [50, 200, 500, 1000]  # [1, 10, 100]
+        n_steps_list = [10, 20, 50]
+
+    plot_mse_vs_n_iterations(model_performances, n_neurons_list=n_neurons_list, n_iterations_list=n_iterations_list,
+                             n_steps_list=n_steps_list)
+    plot_mse_vs_n_neurons(model_performances, n_neurons_list=n_neurons_list, n_iterations_list=n_iterations_list,
+                             n_steps_list=n_steps_list)
+    plot_mse_vs_n_steps(model_performances, n_neurons_list=n_neurons_list, n_iterations_list=n_iterations_list,
+                             n_steps_list=n_steps_list)
 
     # model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_test_set')
     model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_test_set')
     R2_best_mse_test_train_fit, R2_best_mse_test_test_fit = best_mse_test_model_ploting(model_performances_sorted,
                                                                                         inverse_model_mode=True,
-                                                                                        checkpoint_folder='./inertia_modelling_checkpoints_MIXED_TRAINED/')
+                                                                                        training_signal_type=1,
+                                                                                        checkpoint_folder='./inertia_modelling_checkpoints_trying_to_reproduce_RECTANGLE/')
     #
     # print('R2_best_mse_test_train_fit = ' + str(R2_best_mse_test_train_fit))
     # print('R2_best_mse_test_test_fit = ' + str(R2_best_mse_test_test_fit))
@@ -427,7 +454,8 @@ def main():
     model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_train_set')
     R2_best_mse_train_train_fit, R2_best_mse_train_test_fit = best_mse_train_model_ploting(model_performances_sorted,
                                                                                            inverse_model_mode=True,
-                                                                                           checkpoint_folder='./inertia_modelling_checkpoints_MIXED_TRAINED/')
+                                                                                           training_signal_type=1,
+                                                                                           checkpoint_folder='./inertia_modelling_checkpoints_trying_to_reproduce_RECTANGLE/')
     #
     # print('R2_best_mse_train_train_fit = ' + str(R2_best_mse_train_train_fit))
     # print('R2_best_mse_train_test_fit = ' + str(R2_best_mse_train_test_fit))
