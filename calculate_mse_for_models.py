@@ -91,7 +91,7 @@ def main(titles_model_inverse_data,
                     'mse_train_set': mse_train_set,
                     'mse_test_set': mse_test_set,
                     'n_steps': n_steps_inverse_model, 'n_neurons': n_neurons_inverse_model, 'n_iterations': n_iterations_model_inverse,
-                    'title': title_model_inverse,
+                    'title': title_model_inverse.split('\\')[1].replace('my_time_series_model', ''),
                     'identification_option': option, 'training_signal_addon': training_signal_addon
                 })
 

@@ -392,15 +392,6 @@ def simulate_old_perfect_simulation():
 
 
 def main():
-    # Check jak wyglada blad dopasowania modeli do sygnalu na ktorych byly trenowane
-    # i na ktorych nie byly trenowane
-    #
-    # checkpoint_path="./inertia_modelling_checkpoints_RECTANGLE_A2_P80_dt1_400probes_TRAINED"
-    # titles_model_inverse_data, titles_model_data = simulation.extract_models_and_inverse_models_data \
-    #                                                (checkpoint_path)
-
-    # simulate_old_perfect_simulation()
-
     # unpickled_object = compare_mses.unpickle_object(
     #     "./model_and_inv_model_identification_mses/model_performance_trying_to_reproduce_MIXED_.pickle")
     #
@@ -409,10 +400,15 @@ def main():
     #     model_performances.append(item)
 
     unpickled_object = compare_mses.unpickle_object(
-        "./model_and_inv_model_identification_mses/model_inverse_performanceinertia_modelling_checkpoints_MIXED_TRAINED.pickle")
+        "./model_and_inv_model_identification_mses/model_performance_trying_to_reproduce_RECTANGLE_.pickle")
+
     model_performances = []
     for item in unpickled_object:
-        model_performances.append(item)
+        try:
+            item['mse_train_set'] = item.pop('mse_training_set')
+            model_performances.append(item)
+        except:
+            model_performances.append(item)
 
     plot_mse_vs_n_iterations(model_performances)
     plot_mse_vs_n_neurons(model_performances)
