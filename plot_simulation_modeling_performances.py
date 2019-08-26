@@ -415,47 +415,47 @@ def main():
     unpickled_object = compare_mses.unpickle_object(
         "./model_and_inv_model_identification_mses/model_performance_trying_to_reproduce_MIXED_.pickle")
 
-    model_performances = []
-    for item in unpickled_object:
-        try:
-            item['mse_train_set'] = item.pop('mse_training_set')
-            model_performances.append(item)
-        except:
-            model_performances.append(item)
-
-    trying_to_reproduce_mode = True
-    if not trying_to_reproduce_mode:
-        n_iterations_list = [10, 20, 50]
-        n_steps_list = [10, 20, 30, 50]
-        n_neurons_list = [50, 200, 500, 1000]
-    else:
-        n_iterations_list = [10, 20, 50, 100, 250, 500]
-        n_neurons_list = [50, 200, 500, 1000]  # [1, 10, 100]
-        n_steps_list = [10, 20, 50]
-
-    plot_mse_vs_n_iterations(model_performances, n_neurons_list=n_neurons_list, n_iterations_list=n_iterations_list,
-                             n_steps_list=n_steps_list)
-    plot_mse_vs_n_neurons(model_performances, n_neurons_list=n_neurons_list, n_iterations_list=n_iterations_list,
-                             n_steps_list=n_steps_list)
-    plot_mse_vs_n_steps(model_performances, n_neurons_list=n_neurons_list, n_iterations_list=n_iterations_list,
-                             n_steps_list=n_steps_list)
-
+    # model_performances = []
+    # for item in unpickled_object:
+    #     try:
+    #         item['mse_train_set'] = item.pop('mse_training_set')
+    #         model_performances.append(item)
+    #     except:
+    #         model_performances.append(item)
+    #
+    # trying_to_reproduce_mode = True
+    # if not trying_to_reproduce_mode:
+    #     n_iterations_list = [10, 20, 50]
+    #     n_steps_list = [10, 20, 30, 50]
+    #     n_neurons_list = [50, 200, 500, 1000]
+    # else:
+    #     n_iterations_list = [10, 20, 50, 100, 250, 500]
+    #     n_neurons_list = [50, 200, 500, 1000]  # [1, 10, 100]
+    #     n_steps_list = [10, 20, 50]
+    #
+    # plot_mse_vs_n_iterations(model_performances, n_neurons_list=n_neurons_list, n_iterations_list=n_iterations_list,
+    #                          n_steps_list=n_steps_list)
+    # plot_mse_vs_n_neurons(model_performances, n_neurons_list=n_neurons_list, n_iterations_list=n_iterations_list,
+    #                          n_steps_list=n_steps_list)
+    # plot_mse_vs_n_steps(model_performances, n_neurons_list=n_neurons_list, n_iterations_list=n_iterations_list,
+    #                          n_steps_list=n_steps_list)
+    #
+    # # model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_test_set')
     # model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_test_set')
-    model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_test_set')
-    R2_best_mse_test_train_fit, R2_best_mse_test_test_fit = best_mse_test_model_ploting(model_performances_sorted,
-                                                                                        inverse_model_mode=True,
-                                                                                        training_signal_type=1,
-                                                                                        checkpoint_folder='./inertia_modelling_checkpoints_trying_to_reproduce_RECTANGLE/')
-    #
-    # print('R2_best_mse_test_train_fit = ' + str(R2_best_mse_test_train_fit))
-    # print('R2_best_mse_test_test_fit = ' + str(R2_best_mse_test_test_fit))
-    #
-    # model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_training_set')
-    model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_train_set')
-    R2_best_mse_train_train_fit, R2_best_mse_train_test_fit = best_mse_train_model_ploting(model_performances_sorted,
-                                                                                           inverse_model_mode=True,
-                                                                                           training_signal_type=1,
-                                                                                           checkpoint_folder='./inertia_modelling_checkpoints_trying_to_reproduce_RECTANGLE/')
+    # R2_best_mse_test_train_fit, R2_best_mse_test_test_fit = best_mse_test_model_ploting(model_performances_sorted,
+    #                                                                                     inverse_model_mode=True,
+    #                                                                                     training_signal_type=1,
+    #                                                                                     checkpoint_folder='./inertia_modelling_checkpoints_trying_to_reproduce_MIXED/')
+    # #
+    # # print('R2_best_mse_test_train_fit = ' + str(R2_best_mse_test_train_fit))
+    # # print('R2_best_mse_test_test_fit = ' + str(R2_best_mse_test_test_fit))
+    # #
+    # # model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_training_set')
+    # model_performances_sorted = compare_mses.sort_performanes_by(model_performances, key='mse_train_set')
+    # R2_best_mse_train_train_fit, R2_best_mse_train_test_fit = best_mse_train_model_ploting(model_performances_sorted,
+    #                                                                                        inverse_model_mode=True,
+    #                                                                                        training_signal_type=1,
+    #                                                                                        checkpoint_folder='./inertia_modelling_checkpoints_trying_to_reproduce_MIXED/')
     #
     # print('R2_best_mse_train_train_fit = ' + str(R2_best_mse_train_train_fit))
     # print('R2_best_mse_train_test_fit = ' + str(R2_best_mse_train_test_fit))
